@@ -102,7 +102,7 @@ export default function Home() {
               size={28} 
             />
             <span style={{ display: "block", font: "500 14px/1 var(--font-core)", color: "#fff" }}>
-              {user.name.split(" ")[0].toLowerCase()}crypto
+              {user?.name ? user.name.split(" ")[0].toLowerCase() : "user"}crypto
             </span>
           </button>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

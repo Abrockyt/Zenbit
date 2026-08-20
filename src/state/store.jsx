@@ -381,7 +381,21 @@ function load() {
     // Shallow-merge over a fresh tree so added keys in later versions don't crash.
     const saved = JSON.parse(raw);
     const base = freshState();
-    return { ...base, ...saved, settings: { ...base.settings, ...saved.settings, notifications: { ...base.settings.notifications, ...saved.settings?.notifications }, appLock: { ...base.settings.appLock, ...saved.settings?.appLock } } };
+    return { 
+      ...base, 
+      ...saved, 
+      session: { 
+        ...base.session, 
+        ...saved.session, 
+        user: { ...base.session.user, ...saved.session?.user } 
+      },
+      settings: { 
+        ...base.settings, 
+        ...saved.settings, 
+        notifications: { ...base.settings.notifications, ...saved.settings?.notifications }, 
+        appLock: { ...base.settings.appLock, ...saved.settings?.appLock } 
+      } 
+    };
   } catch {
     return freshState();
   }
