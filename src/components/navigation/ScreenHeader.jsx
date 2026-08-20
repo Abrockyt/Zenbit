@@ -1,0 +1,39 @@
+import { useNavigate } from "react-router-dom";
+import IconButton from "../core/IconButton";
+
+
+// Sticky within its scrolling parent (every caller is a flex column with
+// overflowY: auto, so position:sticky works without restructuring the page)
+// with real liquid-glass refraction, so content passes visibly underneath
+// instead of disappearing under a flat tint the moment it scrolls.
+export default function ScreenHeader({ title, onBack, right, showBack = true }) {
+  const navigate = useNavigate();
+  return (
+    <div
+      style={{
+        position: "sticky",
+        top: -18,
+        zIndex: 25,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        minHeight: 44,
+        flex: "0 0 auto",
+        padding: "18px 16px",
+        margin: "-18px -16px 0",
+        borderRadius: 18,
+        boxSizing: "border-box",
+        background: "rgba(10, 15, 13, 0.65)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        borderBottom: "0.5px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <span style={{ width: 36, display: "flex" }}>
+        {showBack ? <IconButton icon="chevron-left" onClick={onBack ?? (() => navigate(-1))} /> : null}
+      </span>
+      <span style={{ flex: 1, textAlign: "center", font: "600 17px/22px var(--font-core)", color: "#fff" }}>{title}</span>
+      <span style={{ width: 36, display: "flex", justifyContent: "flex-end" }}>{right}</span>
+    </div>
+  );
+}

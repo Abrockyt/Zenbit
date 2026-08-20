@@ -1,0 +1,146 @@
+import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, useScroll, useTransform } from "framer-motion";
+import PhoneFrame from "../components/frames/PhoneFrame";
+import Icon from "../components/core/Icon";
+
+export default function AiChat() {
+  const navigate = useNavigate();
+  const [text, setText] = useState("");
+  const [messages, setMessages] = useState([
+    { id: 1, from: "ai", text: "Hi Aarav. I'm Zen, your AI co-pilot — I track your portfolio and the markets. How can I help?" },
+    { id: 2, from: "me", text: "Is now a good time to buy ETH?" },
+    { id: 3, from: "ai", text: "ETH is up 3.5% and reclaimed its 200-day average. RSI is 58 — room to run, not overbought. Your ETH is 28% of the book; adding keeps you diversified. I'd scale in rather than all at once." }
+  ]);
+
+  const scrollRef = useRef(null);
+  const { scrollY } = useScroll({ container: scrollRef });
+  const bgOpacity = useTransform(scrollY, [0, 30], [0, 0.45]);
+  const blurValue = useTransform(scrollY, [0, 30], ["blur(0px)", "blur(24px)"]);
+  const borderOpacity = useTransform(scrollY, [0, 30], [0, 0.08]);
+
+  const send = () => {
+    if (!text.trim()) return;
+    setMessages(prev => [...prev, { id: Date.now(), from: "me", text: text.trim() }]);
+    setText("");
+    setTimeout(() => {
+      setMessages(prev => [...prev, { id: Date.now()+1, from: "ai", text: "I'm analyzing the latest market data to give you an updated recommendation." }]);
+    }, 1000);
+  };
+
+  return (
+    <PhoneFrame tabBar={null}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+        
+        {/* Header */}
+        <motion.div style={{ 
+          position: "absolute", top: 0, left: 0, right: 0,
+          display: "flex", alignItems: "center", justifyContent: "space-between", 
+          height: 106,
+          paddingTop: 54,
+          paddingBottom: 12,
+          paddingLeft: 16,
+          paddingRight: 16,
+          background: useTransform(bgOpacity, v => `rgba(10, 15, 13, ${v})`),
+          backdropFilter: blurValue,
+          WebkitBackdropFilter: blurValue,
+          borderBottom: useTransform(borderOpacity, v => `0.5px solid rgba(255,255,255,${v})`),
+          zIndex: 10,
+          pointerEvents: "auto"
+        }}>
+          <button onClick={() => navigate(-1)} style={{ background: "none", border: "none", padding: 8, display: "flex" }}>
+            <Icon name="chevron-left" size={24} color="#fff" />
+          </button>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 36, height: 36, background: "#000", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name="sparkles" size={18} color="#fff" />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
+              <span style={{ font: "600 16px/1 var(--font-core)", color: "#fff" }}>Zen AI</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: 3, background: "#3ADE7E" }} />
+                <span style={{ font: "500 12px/1 var(--font-core)", color: "#888" }}>Online</span>
+              </div>
+            </div>
+          </div>
+          
+          <div style={{ display: "flex", background: "#fff", borderRadius: 999, padding: 3 }}>
+            <span style={{ padding: "6px 12px", fontSize: 13, fontWeight: 500, color: "#666" }}>Calm</span>
+            <span style={{ padding: "6px 12px", fontSize: 13, fontWeight: 600, color: "#fff", background: "#000", borderRadius: 999 }}>Pro</span>
+          </div>
+        </motion.div>
+
+        {/* Scrollable Chat Area */}
+        <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "106px 16px 16px", display: "flex", flexDirection: "column", gap: 16 }}>
+          
+          {/* Top Info Cards */}
+          <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+            <div style={{ flex: 1, background: "#fff", padding: 16, borderRadius: 16, boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <span style={{ width: 6, height: 6, borderRadius: 3, background: "#3ADE7E" }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#3ADE7E", letterSpacing: 0.5 }}>MOVE</span>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#000", marginBottom: 4 }}>BTC up 2.1% today</div>
+              <div style={{ fontSize: 12, color: "#888" }}>Momentum building on volume.</div>
+            </div>
+            
+            <div style={{ flex: 1, background: "#fff", padding: 16, borderRadius: 16, boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <span style={{ width: 6, height: 6, borderRadius: 3, background: "#F2504B" }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#F2504B", letterSpacing: 0.5 }}>RISK</span>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#000", marginBottom: 4 }}>SOL exposure high</div>
+              <div style={{ fontSize: 12, color: "#888" }}>16% of book in one asset.</div>
+            </div>
+          </div>
+
+          {/* Messages */}
+          {messages.map(m => (
+            <div key={m.id} style={{ display: "flex", justifyContent: m.from === "me" ? "flex-end" : "flex-start" }}>
+              <div style={{ 
+                maxWidth: "80%", 
+                padding: "14px 18px", 
+                background: m.from === "me" ? "#1A1A1A" : "#FFFFFF", 
+                color: m.from === "me" ? "#FFFFFF" : "#333333",
+                borderRadius: m.from === "me" ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
+                fontSize: 15,
+                lineHeight: 1.4,
+                boxShadow: m.from === "ai" ? "0 4px 16px rgba(0,0,0,0.04)" : "none",
+                textAlign: "left"
+              }}>
+                {m.text}
+              </div>
+            </div>
+          ))}
+          <div style={{ height: 20 }} />
+        </div>
+
+        {/* Input Area (White Bottom Sheet) */}
+        <div style={{ padding: "16px 16px 34px", background: "#fff", borderRadius: "24px 24px 0 0" }}>
+          
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 16, margin: "0 -16px", paddingLeft: 16 }}>
+            <span style={{ padding: "8px 16px", background: "#fff", border: "1px solid #EAECEF", borderRadius: 999, fontSize: 13, color: "#333", fontWeight: 500, whiteSpace: "nowrap" }}>Risk check</span>
+            <span style={{ padding: "8px 16px", background: "#fff", border: "1px solid #EAECEF", borderRadius: 999, fontSize: 13, color: "#333", fontWeight: 500, whiteSpace: "nowrap" }}>ETH key levels</span>
+            <span style={{ padding: "8px 16px", background: "#fff", border: "1px solid #EAECEF", borderRadius: 999, fontSize: 13, color: "#333", fontWeight: 500, whiteSpace: "nowrap" }}>Swap ₹5k to SOL</span>
+          </div>
+          
+          <div style={{ display: "flex", alignItems: "center", background: "#fff", border: "1px solid #EAECEF", borderRadius: 999, padding: "8px 8px 8px 16px" }}>
+            <input 
+              type="text" 
+              value={text}
+              onChange={e => setText(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && send()}
+              placeholder="Ask Zen anything..." 
+              style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 15, color: "#000" }} 
+            />
+            <button onClick={send} style={{ width: 36, height: 36, borderRadius: 18, background: text.trim() ? "#000" : "#EAECEF", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}>
+              <Icon name="arrow-up" size={16} color={text.trim() ? "#fff" : "#999"} />
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </PhoneFrame>
+  );
+}

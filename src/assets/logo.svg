@@ -1,0 +1,24 @@
+<svg width="240" height="240" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Zenbit Pro logo">
+  <title>Zenbit Pro</title>
+  <defs>
+    <radialGradient id="zb-bg" cx="50%" cy="0%" r="85%">
+      <stop offset="0%" stop-color="#16302A"/>
+      <stop offset="42%" stop-color="#0A1512"/>
+      <stop offset="100%" stop-color="#040605"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0" y="0" width="240" height="240" rx="54" fill="url(#zb-bg)"/>
+  <rect x="0.5" y="0.5" width="239" height="239" rx="53.5" fill="none" stroke="rgba(255,255,255,.07)"/>
+
+  <g transform="translate(120,120)">
+    <path d="M -38,-42 L 38,-42 L -38,42 L 38,42"
+          fill="none" stroke="#193029" stroke-width="16"
+          stroke-linecap="square" stroke-linejoin="miter"
+          transform="translate(9,9)"/>
+
+    <path d="M -38,-42 L 38,-42 L -38,42 L 38,42"
+          fill="none" stroke="#3ADE7E" stroke-width="16"
+          stroke-linecap="square" stroke-linejoin="miter"/>
+  </g>
+</svg>

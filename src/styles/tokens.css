@@ -1,0 +1,121 @@
+/* ============================================================
+   Zenbit Pro -- design tokens
+   Ported from the Claude Design handoff bundle's design-system tokens
+   (colors, typography, spacing, effects). Keep this file close to the
+   source so it's easy to audit against the design system readme.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,300..800&family=Chakra+Petch:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap");
+
+:root{
+  /* ---------- Base neutrals ---------- */
+  --black:#000000;--ink-0:#040605;--ink-1:#080B0A;--ink-2:#0C110F;--ink-3:#121816;--ink-4:#1A211E;--ink-5:#232B28;--ink-6:#2E3733;
+  --white:#FFFFFF;
+
+  /* ---------- Green cast ---------- */
+  --green-950:#060B09;--green-900:#0B1512;--green-800:#12211C;--green-700:#193029;--green-600:#213E34;--green-500:#2C5145;
+  --green-mist:#26362F;
+
+  /* ---------- Signal colors ---------- */
+  --up-500:#3ADE7E;--up-600:#2FBF69;--up-glow:rgba(58,222,126,.18);
+  --down-500:#F2504B;--down-600:#D33C38;--down-glow:rgba(242,80,75,.16);
+  --warn-500:#F5B544;--info-500:#5B8CFF;
+
+  /* ---------- Coin brand colors ---------- */
+  --coin-eth:#627EEA;--coin-btc:#F7931A;--coin-sol:#14F195;--coin-usdt:#26A17B;--coin-usdc:#2775CA;--coin-tron:#EF0027;--coin-doge:#C2A633;--coin-link:#2A5ADA;--coin-xlm:#7D00FF;
+
+  /* ---------- Semantic surfaces ---------- */
+  --surface-app:var(--ink-0);
+  --surface-screen:var(--green-950);
+  --surface-card:rgba(255,255,255,.045);
+  --surface-card-solid:#0F1614;
+  --surface-raised:rgba(255,255,255,.07);
+  --surface-sunken:rgba(0,0,0,.35);
+  --surface-inverse:var(--white);
+  --surface-overlay:rgba(4,6,5,.72);
+
+  /* ---------- Semantic text ---------- */
+  --text-primary:#FFFFFF;
+  --text-secondary:rgba(255,255,255,.62);
+  --text-tertiary:rgba(255,255,255,.38);
+  --text-disabled:rgba(255,255,255,.22);
+  --text-inverse:#050807;
+  --text-up:var(--up-500);
+  --text-down:var(--down-500);
+
+  /* ---------- Borders / hairlines ---------- */
+  --border-subtle:rgba(255,255,255,.07);
+  --border-default:rgba(255,255,255,.12);
+  --border-strong:rgba(255,255,255,.22);
+  --border-focus:rgba(58,222,126,.55);
+
+  /* ---------- Gradients ---------- */
+  --grad-screen:radial-gradient(150% 70% at 50% 0%, #4A5F5D 0%, #000000 100%);
+  --grad-card:linear-gradient(180deg,rgba(255,255,255,.08) 0%,rgba(255,255,255,.025) 100%);
+  --grad-glass:linear-gradient(160deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.02) 55%,rgba(255,255,255,.05) 100%);
+  --grad-chart:linear-gradient(180deg,rgba(203,232,220,.55) 0%,rgba(203,232,220,.10) 55%,rgba(203,232,220,0) 100%);
+  --grad-bank-card:linear-gradient(145deg,#22322C 0%,#101A17 55%,#0A1210 100%);
+
+  /* ---------- Fonts ---------- */
+  --font-core:"Hanken Grotesk","Helvetica Neue",Arial,sans-serif;
+  --font-brand:"Chakra Petch","Hanken Grotesk",sans-serif;
+  --font-mono:"Geist Mono",ui-monospace,SFMono-Regular,monospace;
+
+  --type-display-1-size:64px;--type-display-1-line:64px;--type-display-1-weight:500;--type-display-1-track:-2.4px;
+  --type-display-2-size:40px;--type-display-2-line:44px;--type-display-2-weight:500;--type-display-2-track:-1.4px;
+  --type-balance-size:34px;--type-balance-line:38px;--type-balance-weight:500;--type-balance-track:-1.1px;
+  --type-title-1-size:26px;--type-title-1-line:32px;--type-title-1-weight:500;--type-title-1-track:-0.7px;
+  --type-title-2-size:20px;--type-title-2-line:26px;--type-title-2-weight:500;--type-title-2-track:-0.4px;
+  --type-title-3-size:17px;--type-title-3-line:22px;--type-title-3-weight:500;--type-title-3-track:-0.2px;
+  --type-body-size:15px;--type-body-line:21px;--type-body-weight:400;--type-body-track:-0.1px;
+  --type-body-sm-size:13px;--type-body-sm-line:18px;--type-body-sm-weight:400;--type-body-sm-track:0px;
+  --type-label-size:12px;--type-label-line:16px;--type-label-weight:500;--type-label-track:0px;
+  --type-caption-size:11px;--type-caption-line:14px;--type-caption-weight:400;--type-caption-track:.1px;
+  --type-micro-size:9px;--type-micro-line:12px;--type-micro-weight:500;--type-micro-track:.3px;
+  --type-numeric-feature:"tnum" 1,"lnum" 1;
+
+  /* ---------- Spacing (4px base, 8/12/16/20/24 rhythm) ---------- */
+  --space-0:0px;--space-1:2px;--space-2:4px;--space-3:6px;--space-4:8px;--space-5:10px;--space-6:12px;--space-7:14px;--space-8:16px;--space-9:20px;--space-10:24px;--space-11:28px;--space-12:32px;--space-14:40px;--space-16:48px;--space-20:64px;
+
+  --screen-gutter:20px;
+  --screen-top-safe:54px;
+  --screen-bottom-safe:34px;
+  --stack-gap:16px;
+  --list-row-height:60px;
+  --tabbar-height:64px;
+  --control-height-lg:54px;
+  --control-height-md:44px;
+  --control-height-sm:34px;
+  --hit-min:44px;
+
+  /* ---------- Radii ---------- */
+  --radius-xs:8px;--radius-sm:12px;--radius-md:16px;--radius-lg:20px;--radius-xl:26px;--radius-2xl:32px;--radius-pill:999px;--radius-phone:44px;
+
+  /* ---------- Elevation ---------- */
+  --shadow-none:none;
+  --shadow-card:none;
+  --shadow-raised:0 8px 24px rgba(0,0,0,.45);
+  --shadow-sheet:0 -12px 40px rgba(0,0,0,.6);
+  --shadow-cta:0 6px 22px rgba(0,0,0,.5);
+  --glow-up:0 0 24px var(--up-glow);
+  --glow-focus:0 0 0 2px rgba(58,222,126,.28);
+
+  /* ---------- Blur ---------- */
+  --blur-glass:18px;
+  --blur-overlay:28px;
+
+  /* ---------- Motion ---------- */
+  --ease-standard:cubic-bezier(.22,.61,.36,1);
+  --ease-emphasis:cubic-bezier(.16,1,.3,1);
+  --dur-fast:120ms;--dur-base:200ms;--dur-slow:320ms;
+
+  /* ---------- Interaction ---------- */
+  --state-hover-lift:rgba(255,255,255,.06);
+  --state-press-scale:.97;
+  --state-disabled-opacity:.38;
+}
+
+/* Motion durations/eases as numbers, for framer-motion (JS can't read ms/cubic-bezier CSS vars directly) */
+:root{
+  --dur-fast-s:.12;--dur-base-s:.2;--dur-slow-s:.32;
+}

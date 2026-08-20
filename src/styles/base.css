@@ -1,0 +1,83 @@
+@import "./tokens.css";
+
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  background:var(--ink-0);
+  color:var(--text-primary);
+  font-family:var(--font-core);
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+#root{ height:100vh; overflow:hidden; }
+button,input{ font-family:inherit; color:inherit; }
+button{ cursor:pointer; border:none; outline:none; }
+a{ color:var(--up-500); text-decoration:none; }
+a:hover{ color:var(--white); }
+img{ max-width:100%; display:block; }
+
+/* Global keyframe for spinners. Previously declared as an inline <style> tag
+   inside individual components (Button, Swap) — under AnimatePresence's
+   mount/unmount timing that let the tag get reparented into an unrelated
+   button's DOM (invalid <style> inside <button>, breaking its click target).
+   One global declaration, none of that. */
+@keyframes zb-spin{ to{ transform:rotate(360deg); } }
+
+::-webkit-scrollbar{ width:0; height:0; }
+
+.zb-display-1{font:var(--type-display-1-weight) var(--type-display-1-size)/var(--type-display-1-line) var(--font-core);letter-spacing:var(--type-display-1-track)}
+.zb-display-2{font:var(--type-display-2-weight) var(--type-display-2-size)/var(--type-display-2-line) var(--font-core);letter-spacing:var(--type-display-2-track)}
+.zb-balance{font:var(--type-balance-weight) var(--type-balance-size)/var(--type-balance-line) var(--font-core);letter-spacing:var(--type-balance-track);font-variant-numeric:tabular-nums}
+.zb-title-1{font:var(--type-title-1-weight) var(--type-title-1-size)/var(--type-title-1-line) var(--font-core);letter-spacing:var(--type-title-1-track)}
+.zb-title-2{font:var(--type-title-2-weight) var(--type-title-2-size)/var(--type-title-2-line) var(--font-core);letter-spacing:var(--type-title-2-track)}
+.zb-title-3{font:var(--type-title-3-weight) var(--type-title-3-size)/var(--type-title-3-line) var(--font-core);letter-spacing:var(--type-title-3-track)}
+.zb-body{font:var(--type-body-weight) var(--type-body-size)/var(--type-body-line) var(--font-core);letter-spacing:var(--type-body-track)}
+.zb-body-sm{font:var(--type-body-sm-weight) var(--type-body-sm-size)/var(--type-body-sm-line) var(--font-core)}
+.zb-label{font:var(--type-label-weight) var(--type-label-size)/var(--type-label-line) var(--font-core)}
+.zb-caption{font:var(--type-caption-weight) var(--type-caption-size)/var(--type-caption-line) var(--font-core)}
+.zb-micro{font:var(--type-micro-weight) var(--type-micro-size)/var(--type-micro-line) var(--font-core);letter-spacing:var(--type-micro-track)}
+.zb-brand{font-family:var(--font-brand);font-weight:600;letter-spacing:.06em}
+.zb-mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+.zb-tabular{ font-variant-numeric:tabular-nums; }
+
+.zb-app-shell{
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:
+    radial-gradient(100% 100% at 50% 0%, #4A5F5D 0%, #1a2221 60%, var(--ink-0) 100%);
+  overflow:hidden;
+}
+
+.zb-phone{
+  width:360px;
+  height:780px;
+  border-radius:var(--radius-phone);
+  padding:3px;
+  background:linear-gradient(160deg,#3A403D 0%,#0C0F0E 40%,#4A514D 100%);
+  box-shadow:0 30px 80px rgba(0,0,0,.65);
+  flex:0 0 auto;
+}
+.zb-phone-screen{
+  position:relative;
+  width:100%;
+  height:100%;
+  border-radius:calc(var(--radius-phone) - 3px);
+  overflow:hidden;
+  background:var(--grad-screen);
+  color:var(--text-primary);
+  font-family:var(--font-core);
+}
+
+@media (max-width: 460px){
+  .zb-app-shell{ padding:0; }
+  .zb-phone{ width:100vw; height:100vh; border-radius:0; padding:0; box-shadow:none; }
+  .zb-phone-screen{ border-radius:0; padding-top:env(safe-area-inset-top); }
+  /* The real device draws its own status bar here — ours would float with no
+     notch around it, so only the reserved top spacing (StatusBar.jsx) stays. */
+  .zb-status-decor{ display:none; }
+}
