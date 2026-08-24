@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zenbit Pro — Case Study</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ["Inter","sans-serif"], display: ["Syne","sans-serif"] }
+        }
+      }
+    }
+  </script>
+  <style>
+    *{box-sizing:border-box}html{scroll-behavior:smooth}
+    body{background:#0a0f0d;color:#fff;font-family:"Inter",sans-serif;overflow-x:hidden}
+    .glow{box-shadow:0 0 80px rgba(34,197,94,.15),0 0 160px rgba(34,197,94,.06)}
+    .tag{display:inline-flex;align-items:center;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(34,197,94,.4);color:#22c55e;background:rgba(34,197,94,.08)}
+    .card{background:#111a15;border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:28px}
+    .pill{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:999px;padding:6px 16px;font-size:13px;font-weight:500;color:#4ade80}
+    .gradient-text{background:linear-gradient(135deg,#fff 0%,#4ade80 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .phone{background:#1a1a1a;border-radius:44px;border:2px solid rgba(255,255,255,.12);padding:12px;box-shadow:0 40px 80px rgba(0,0,0,.6)}
+    .screen-inner{border-radius:34px;overflow:hidden;aspect-ratio:9/19.5;background:#0a0f0d;position:relative}
+    .dot{width:10px;height:10px;border-radius:50%;background:#22c55e;flex-shrink:0;box-shadow:0 0 12px rgba(34,197,94,.6)}
+    .fade-up{opacity:0;transform:translateY(40px)}
+    .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);margin:0 auto;max-width:800px}
+    ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#0a0f0d}::-webkit-scrollbar-thumb{background:rgba(34,197,94,.3);border-radius:4px}
+  </style>
+</head>
+<body>
+
+<nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-5" style="background:rgba(10,15,13,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05)">
+  <span class="font-display text-lg font-bold">Zenbit Pro</span>
+  <div class="hidden md:flex items-center gap-8 text-sm" style="color:rgba(255,255,255,.6)">
+    <a href="#problem" class="hover:text-white transition-colors">Problem</a>
+    <a href="#workflow" class="hover:text-white transition-colors">Workflow</a>
+    <a href="#screens" class="hover:text-white transition-colors">Screens</a>
+    <a href="#tech" class="hover:text-white transition-colors">Tech Stack</a>
+  </div>
+  <a href="https://github.com/Abrockyt/Zenbit" target="_blank" class="text-sm px-4 py-2 rounded-full border transition-all" style="border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7)">GitHub &#8599;</a>
+</nav>
+
+<!-- HERO -->
+<section class="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20">
+  <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse 60% 50% at 50% 40%,rgba(34,197,94,.08) 0%,transparent 70%)"></div>
+  <div class="fade-up max-w-4xl mx-auto">
+    <div class="tag mb-6">Case Study &middot; 2024-25</div>
+    <h1 class="font-display text-7xl md:text-8xl font-black leading-none mb-6 gradient-text">Zenbit Pro</h1>
+    <p class="text-xl md:text-2xl font-light max-w-2xl mx-auto leading-relaxed mb-10" style="color:rgba(255,255,255,.5)">A beginner-first crypto trading app built for India &mdash; where <span style="color:rgba(255,255,255,.8)">clarity beats complexity</span> and <span style="color:#4ade80">confidence beats confusion.</span></p>
+    <div class="flex flex-wrap items-center justify-center gap-3">
+      <span class="pill">React.js</span><span class="pill">Framer Motion</span><span class="pill">Vite</span><span class="pill">Context API</span><span class="pill">CSS Tokens</span><span class="pill">CoinGecko API</span>
+    </div>
+  </div>
+  <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-xs" style="color:rgba(255,255,255,.3)">
+    <span>Scroll</span>
+    <div class="w-px h-12 bg-gradient-to-b from-white/30 to-transparent"></div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="problem" class="py-32 px-6 max-w-6xl mx-auto">
+  <div class="fade-up">
+    <div class="tag mb-6">The Problem</div>
+    <h2 class="font-display text-4xl md:text-6xl font-black mb-6 max-w-4xl leading-tight">India has more crypto users than any country &mdash; <span style="color:#fb923c">but apps still speak a language beginners never learned.</span></h2>
+  </div>
+  <div class="grid md:grid-cols-2 gap-6 mt-16">
+    <div class="card fade-up"><div class="text-green-500 font-mono text-sm font-bold mb-4">01</div><h3 class="text-white font-semibold text-xl mb-3">The words shut people out</h3><p style="color:rgba(255,255,255,.5)" class="leading-relaxed">Gas. Slippage. L2. Limit order. Every unknown word quietly tells the user this app was not built for them &mdash; so they leave rather than feel stupid.</p></div>
+    <div class="card fade-up"><div class="text-green-500 font-mono text-sm font-bold mb-4">02</div><h3 class="text-white font-semibold text-xl mb-3">Fear beats curiosity</h3><p style="color:rgba(255,255,255,.5)" class="leading-relaxed">Real money, no undo, nobody to ask. People reach the buy screen and simply stop. Fear was the #1 reason first-timers quit before their first trade.</p></div>
+    <div class="card fade-up"><div class="text-green-500 font-mono text-sm font-bold mb-4">03</div><h3 class="text-white font-semibold text-xl mb-3">No native currency support</h3><p style="color:rgba(255,255,255,.5)" class="leading-relaxed">Existing apps show balances in USD or BTC decimals. Indian users never see &#8377; &mdash; the one number they actually understand and care about.</p></div>
+    <div class="card fade-up"><div class="text-green-500 font-mono text-sm font-bold mb-4">04</div><h3 class="text-white font-semibold text-xl mb-3">AI is an afterthought</h3><p style="color:rgba(255,255,255,.5)" class="leading-relaxed">When doubt strikes &mdash; right before a trade &mdash; there is nowhere to turn. AI assistants are buried in menus, not present at the moment of decision.</p></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- WORKFLOW -->
+<section id="workflow" class="py-32 px-6 max-w-5xl mx-auto">
+  <div class="fade-up text-center mb-20">
+    <div class="tag mb-6">Design Workflow</div>
+    <h2 class="font-display text-4xl md:text-5xl font-black">From Research to Reality</h2>
+  </div>
+  <div class="space-y-6">
+    <div class="card fade-up"><div style="color:rgba(255,255,255,.3)" class="text-xs font-mono mb-1">Dec 1</div><h3 class="text-white font-semibold mb-1">Project Kickoff</h3><p style="color:rgba(255,255,255,.4)" class="text-sm">Defined problem space: beginner crypto investors in India. Set north-star metric: first-trade completion rate.</p></div>
+    <div class="card fade-up"><div style="color:rgba(255,255,255,.3)" class="text-xs font-mono mb-1">Dec 5</div><h3 class="text-white font-semibold mb-1">Desk &amp; User Research</h3><p style="color:rgba(255,255,255,.4)" class="text-sm">Analysed WazirX, CoinDCX, Binance. Interviewed 8 users aged 18&ndash;24. Finding: language and fear of irreversible mistakes were the top drop-off triggers.</p></div>
+    <div class="card fade-up"><div style="color:rgba(255,255,255,.3)" class="text-xs font-mono mb-1">Dec 10</div><h3 class="text-white font-semibold mb-1">Insights &amp; Persona Creation</h3><p style="color:rgba(255,255,255,.4)" class="text-sm">Built the "Riya" persona: 22-year-old, first-time investor, comfortable with UPI but terrified of crypto jargon.</p></div>
+    <div class="card fade-up"><div style="color:rgba(255,255,255,.3)" class="text-xs font-mono mb-1">Dec 18</div><h3 class="text-white font-semibold mb-1">User Flows &amp; Wireframing</h3><p style="color:rgba(255,255,255,.4)" class="text-sm">Mapped 14 core user journeys. Reduced the home-to-trade flow from 7 taps to 3.</p></div>
+    <div class="card fade-up"><div style="color:rgba(255,255,255,.3)" class="text-xs font-mono mb-1">Dec 24</div><h3 class="text-white font-semibold mb-1">Validation &amp; Iteration</h3><p style="color:rgba(255,255,255,.4)" class="text-sm">Moderated usability tests. Iterated the Buy/Sell screen 3x until 6/8 participants completed their first simulated trade without assistance.</p></div>
+    <div class="card fade-up"><div style="color:rgba(255,255,255,.3)" class="text-xs font-mono mb-1">Jan&ndash;Feb</div><h3 class="text-white font-semibold mb-1">High-Fidelity Frontend Build</h3><p style="color:rgba(255,255,255,.4)" class="text-sm">Full React implementation with live market data, Framer Motion animations, custom CSS design tokens, and a dark glassmorphism visual language.</p></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SCREENS -->
+<section id="screens" class="py-32 px-6 max-w-6xl mx-auto">
+  <div class="fade-up text-center mb-20">
+    <div class="tag mb-6">The Product</div>
+    <h2 class="font-display text-4xl md:text-5xl font-black">Every Screen, Explained</h2>
+    <p class="mt-4 max-w-xl mx-auto" style="color:rgba(255,255,255,.4)">Built with real design intent &mdash; every element earns its place.</p>
+  </div>
+
+  <!-- HOME -->
+  <div class="fade-up grid md:grid-cols-2 gap-12 items-center mb-28">
+    <div class="phone glow max-w-xs mx-auto">
+      <div class="screen-inner">
+        <div class="p-4 h-full flex flex-col" style="background:linear-gradient(160deg,#0d1a10,#0a0f0d)">
+          <div class="flex justify-between text-xs mb-4" style="color:rgba(255,255,255,.3)"><span>9:41</span><span>&#11044;&#11044;&#11044; &#9650; &#9646;</span></div>
+          <div class="flex justify-between items-center mb-5">
+            <div><p class="text-xs" style="color:rgba(255,255,255,.4)">Welcome back,</p><p class="text-white font-bold text-sm">Arjun &#128075;</p></div>
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style="background:rgba(34,197,94,.2);color:#4ade80">A</div>
+          </div>
+          <div class="text-center mb-5">
+            <p class="text-xs mb-1" style="color:rgba(255,255,255,.4)">Total Balance</p>
+            <p class="text-white font-black text-3xl">&#8377;2,84,312</p>
+            <p class="text-xs mt-1" style="color:#4ade80">&#9650; +&#8377;4,231 (1.51%) Today</p>
+          </div>
+          <div class="grid grid-cols-4 gap-2 mb-5">
+            <div class="flex flex-col items-center gap-1"><div class="w-10 h-10 rounded-2xl flex items-center justify-center" style="background:rgba(34,197,94,.15);color:#4ade80">&#8595;</div><span class="text-xs" style="color:rgba(255,255,255,.4)">Buy</span></div>
+            <div class="flex flex-col items-center gap-1"><div class="w-10 h-10 rounded-2xl flex items-center justify-center" style="background:rgba(34,197,94,.15);color:#4ade80">&#8593;</div><span class="text-xs" style="color:rgba(255,255,255,.4)">Sell</span></div>
+            <div class="flex flex-col items-center gap-1"><div class="w-10 h-10 rounded-2xl flex items-center justify-center" style="background:rgba(34,197,94,.15);color:#4ade80">+</div><span class="text-xs" style="color:rgba(255,255,255,.4)">Deposit</span></div>
+            <div class="flex flex-col items-center gap-1"><div class="w-10 h-10 rounded-2xl flex items-center justify-center" style="background:rgba(34,197,94,.15);color:#4ade80">&#8853;</div><span class="text-xs" style="color:rgba(255,255,255,.4)">Pay</span></div>
+          </div>
+          <p class="text-xs font-semibold tracking-wider mb-2" style="color:rgba(255,255,255,.3)">WATCHLIST</p>
+          <div class="space-y-2 flex-1">
+            <div class="flex justify-between items-center p-2 rounded-xl" style="background:rgba(255,255,255,.04)"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full flex items-center justify-center text-xs" style="background:rgba(249,115,22,.2)">&#8383;</div><div><p class="text-white text-xs font-semibold">Bitcoin</p><p class="text-xs" style="color:rgba(255,255,255,.3)">BTC</p></div></div><div class="text-right"><p class="text-white text-xs">&#8377;56,82,400</p><p class="text-xs" style="color:#4ade80">&#9650; 2.14%</p></div></div>
+            <div class="flex justify-between items-center p-2 rounded-xl" style="background:rgba(255,255,255,.04)"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full flex items-center justify-center text-xs" style="background:rgba(59,130,246,.2)">&Xi;</div><div><p class="text-white text-xs font-semibold">Ethereum</p><p class="text-xs" style="color:rgba(255,255,255,.3)">ETH</p></div></div><div class="text-right"><p class="text-white text-xs">&#8377;3,21,150</p><p class="text-xs" style="color:#f87171">&#9660; 0.82%</p></div></div>
+            <div class="flex justify-between items-center p-2 rounded-xl" style="background:rgba(255,255,255,.04)"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full flex items-center justify-center text-xs" style="background:rgba(168,85,247,.2)">&#9734;</div><div><p class="text-white text-xs font-semibold">Solana</p><p class="text-xs" style="color:rgba(255,255,255,.3)">SOL</p></div></div><div class="text-right"><p class="text-white text-xs">&#8377;14,320</p><p class="text-xs" style="color:#4ade80">&#9650; 4.71%</p></div></div>
+          </div>
+          <div class="flex justify-around pt-3 mt-2" style="border-top:1px solid rgba(255,255,255,.05)">
+            <span style="color:#22c55e" class="text-xs">&#127968;</span><span class="text-xs" style="color:rgba(255,255,255,.2)">&#128200;</span><span class="text-xs" style="color:rgba(255,255,255,.2)">&#9889;</span><span class="text-xs" style="color:rgba(255,255,255,.2)">&#128172;</span><span class="text-xs" style="color:rgba(255,255,255,.2)">&#128100;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="tag mb-4">Screen 01</div>
+      <h3 class="font-display text-3xl font-black mb-4">Home Screen</h3>
+      <p class="leading-relaxed mb-6" style="color:rgba(255,255,255,.5)">The one screen a first-timer sees first &mdash; designed so nothing needs explaining.</p>
+      <div class="space-y-4">
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Balance in &#8377; with hide toggle</p><p class="text-sm" style="color:rgba(255,255,255,.4)">Live currency selector: USD, EUR, AED, JPY, GBP, INR from a bottom sheet.</p></div></div>
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Buy &middot; Sell &middot; Deposit &middot; Pay</p><p class="text-sm" style="color:rgba(255,255,255,.4)">Four plain-language verbs in the thumb arc. No crypto jargon.</p></div></div>
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Live Watchlist via CoinGecko</p><p class="text-sm" style="color:rgba(255,255,255,.4)">Real-time prices with semantic green/red tokens for instant comprehension.</p></div></div>
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Ask Zen &mdash; AI beside the money</p><p class="text-sm" style="color:rgba(255,255,255,.4)">One tap away at the exact moment doubt appears, not buried in menus.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI CHAT -->
+  <div class="fade-up grid md:grid-cols-2 gap-12 items-center mb-28">
+    <div class="md:order-2 phone glow max-w-xs mx-auto">
+      <div class="screen-inner" style="background:#0a0f0d">
+        <div class="p-4 h-full flex flex-col">
+          <div class="flex justify-between text-xs mb-3" style="color:rgba(255,255,255,.3)"><span>9:41</span><span>&#11044;&#11044;&#11044; &#9650; &#9646;</span></div>
+          <div class="flex items-center gap-3 mb-4"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background:#22c55e">Z</div><div><p class="text-white font-semibold text-sm">Zen AI</p><p class="text-xs" style="color:#4ade80">&#9679; Online</p></div></div>
+          <div class="flex-1 space-y-3 overflow-hidden">
+            <div class="flex justify-end"><div class="rounded-2xl rounded-tr-sm px-3 py-2 text-white text-xs" style="background:rgba(34,197,94,.2)">What is a gas fee?</div></div>
+            <div class="flex gap-2"><div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0" style="background:#22c55e">Z</div><div class="rounded-2xl rounded-tl-sm px-3 py-2 text-xs leading-relaxed" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.8)">Think of it like a delivery charge &#128230; Miners process your transaction and the gas fee pays them &mdash; higher when the network is busy.</div></div>
+            <div class="flex justify-end"><div class="rounded-2xl rounded-tr-sm px-3 py-2 text-white text-xs" style="background:rgba(34,197,94,.2)">Is Solana safe to buy now?</div></div>
+            <div class="flex gap-2"><div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0" style="background:#22c55e">Z</div><div class="rounded-2xl rounded-tl-sm px-3 py-2 text-xs leading-relaxed" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.8)">SOL is up 4.71% today &#129001; Strong fundamentals. Only invest what you can afford to lose and consider DCA over a single large buy.</div></div>
+          </div>
+          <div class="flex gap-2 pt-3" style="border-top:1px solid rgba(255,255,255,.05)"><div class="flex-1 rounded-full px-3 py-2 text-xs" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.3)">Ask anything about crypto&hellip;</div><div class="w-8 h-8 rounded-full flex items-center justify-center text-white" style="background:#22c55e">&#8593;</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="md:order-1">
+      <div class="tag mb-4">Screen 02</div>
+      <h3 class="font-display text-3xl font-black mb-4">Zen AI Co-Pilot</h3>
+      <p class="leading-relaxed mb-6" style="color:rgba(255,255,255,.5)">Speaks plain English &mdash; not crypto. Present at the exact moment doubt appears.</p>
+      <div class="space-y-4">
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Dark-native UI</p><p class="text-sm" style="color:rgba(255,255,255,.4)">Restyled with CSS token variables (var(--surface-card), var(--border-subtle)). No white flash in a dark app.</p></div></div>
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Glassmorphism bubbles</p><p class="text-sm" style="color:rgba(255,255,255,.4)">Translucent backgrounds with backdrop-filter:blur for layered depth.</p></div></div>
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Context-aware answers</p><p class="text-sm" style="color:rgba(255,255,255,.4)">Reads live market data from app state for real, relevant responses.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="fade-up grid md:grid-cols-2 gap-12 items-center mb-28">
+    <div class="phone glow max-w-xs mx-auto">
+      <div class="screen-inner" style="background:linear-gradient(160deg,#0d1a10,#0a0f0d)">
+        <div class="p-5 h-full flex flex-col justify-center items-center text-center">
+          <div class="w-16 h-16 rounded-3xl flex items-center justify-center mb-5" style="background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.3)"><span style="color:#4ade80" class="text-2xl font-black">Z</span></div>
+          <p class="text-white font-black text-xl mb-1">Welcome to</p>
+          <p class="text-white font-black text-xl mb-2">Zenbit Pro</p>
+          <p class="text-xs mb-8" style="color:rgba(255,255,255,.4)">Your beginner-friendly crypto companion.</p>
+          <div class="w-full space-y-3">
+            <div class="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl text-white text-sm font-medium" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.79-.07-1.54-.19-2.27h-11.3v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/><path fill="#34A853" d="M12.255 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96h-3.98v3.09C3.515 21.3 7.615 24 12.255 24z"/><path fill="#FBBC05" d="M5.525 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62h-3.98a11.86 11.86 0 000 10.76l3.98-3.09z"/><path fill="#EA4335" d="M12.255 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C18.205 1.19 15.495 0 12.255 0c-4.64 0-8.74 2.7-10.71 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+              Continue with Google
+            </div>
+            <div class="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl text-white text-sm font-medium" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>
+              Continue with Apple
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="tag mb-4">Screen 03</div>
+      <h3 class="font-display text-3xl font-black mb-4">Frictionless Onboarding</h3>
+      <p class="leading-relaxed mb-6" style="color:rgba(255,255,255,.5)">Replaced a daunting form with instant SSO. A beginner's first impression is trust.</p>
+      <div class="space-y-4">
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Official Google + Apple SVG logos</p><p class="text-sm" style="color:rgba(255,255,255,.4)">Inline SVGs &mdash; pixel-perfect brand accuracy, not screenshots or approximations.</p></div></div>
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">SVG Path-Drawing Splash Screen</p><p class="text-sm" style="color:rgba(255,255,255,.4)">The Zenbit logo draws itself path-by-path using Framer Motion pathLength on boot.</p></div></div>
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">One-tap into fully populated profile</p><p class="text-sm" style="color:rgba(255,255,255,.4)">session/signIn dispatch instantly loads portfolio, watchlist, and social feed.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOCIAL -->
+  <div class="fade-up grid md:grid-cols-2 gap-12 items-center">
+    <div class="md:order-2 phone glow max-w-xs mx-auto">
+      <div class="screen-inner" style="background:#0a0f0d">
+        <div class="p-4 h-full flex flex-col">
+          <div class="flex justify-between text-xs mb-3" style="color:rgba(255,255,255,.3)"><span>9:41</span><span>&#11044;&#11044;&#11044; &#9650; &#9646;</span></div>
+          <p class="text-white font-bold text-base mb-4">Community &#127760;</p>
+          <div class="space-y-3 flex-1 overflow-hidden">
+            <div class="rounded-2xl p-3" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)"><div class="flex items-center gap-2 mb-2"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background:#22c55e">R</div><div><p class="text-white text-xs font-semibold">Riya Sharma</p><p class="text-xs" style="color:rgba(255,255,255,.3)">@riya.trades &middot; 2m</p></div><span class="ml-auto pill text-xs py-1">BTC &#128200;</span></div><p class="text-xs leading-relaxed mb-2" style="color:rgba(255,255,255,.7)">Just did my first ever crypto buy!! 0.001 BTC &#127881; The app made it so simple I thought something went wrong lol</p><div class="flex gap-4 text-xs" style="color:rgba(255,255,255,.3)"><span>&#9825; 48</span><span>&#128172; 12</span><span>&#8599; Share</span></div></div>
+            <div class="rounded-2xl p-3" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)"><div class="flex items-center gap-2 mb-2"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background:#3b82f6">A</div><div><p class="text-white text-xs font-semibold">Aman Gupta</p><p class="text-xs" style="color:rgba(255,255,255,.3)">@aman.eth &middot; 15m</p></div></div><p class="text-xs leading-relaxed" style="color:rgba(255,255,255,.7)">SOL looking bullish &#128640; DCA is the way for beginners fr</p><div class="flex gap-4 text-xs mt-2" style="color:rgba(255,255,255,.3)"><span>&#9825; 91</span><span>&#128172; 24</span><span>&#8599; Share</span></div></div>
+            <div class="rounded-2xl p-3" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)"><div class="flex items-center gap-2 mb-2"><div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background:#ef4444">P</div><div><p class="text-white text-xs font-semibold">Priya Patel</p><p class="text-xs" style="color:rgba(255,255,255,.3)">@priya.invest &middot; 1h</p></div><span class="ml-auto pill text-xs py-1">ETH</span></div><p class="text-xs leading-relaxed" style="color:rgba(255,255,255,.7)">ETH dip is a gift ngl. Added 0.05 to my bag this morning &#9749;</p><div class="flex gap-4 text-xs mt-2" style="color:rgba(255,255,255,.3)"><span>&#9825; 63</span><span>&#128172; 8</span><span>&#8599; Share</span></div></div>
+          </div>
+          <div class="flex justify-around pt-3 mt-2" style="border-top:1px solid rgba(255,255,255,.05)">
+            <span class="text-xs" style="color:rgba(255,255,255,.2)">&#127968;</span><span class="text-xs" style="color:rgba(255,255,255,.2)">&#128200;</span><span class="text-xs" style="color:rgba(255,255,255,.2)">&#9889;</span><span class="text-xs" style="color:#22c55e">&#128172;</span><span class="text-xs" style="color:rgba(255,255,255,.2)">&#128100;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="md:order-1">
+      <div class="tag mb-4">Screen 04</div>
+      <h3 class="font-display text-3xl font-black mb-4">Community Feed</h3>
+      <p class="leading-relaxed mb-6" style="color:rgba(255,255,255,.5)">Learning through observation. Users see real trades from people just like them.</p>
+      <div class="space-y-4">
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Human profiles + avatars</p><p class="text-sm" style="color:rgba(255,255,255,.4)">Named users, handles, timestamps &mdash; authentic social feel, not a data feed.</p></div></div>
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Coin-tagged posts</p><p class="text-sm" style="color:rgba(255,255,255,.4)">Posts tagged with live coin chips (BTC, ETH, SOL) linking discussion to market data.</p></div></div>
+        <div class="flex gap-3"><div class="dot mt-1.5"></div><div><p class="text-white font-medium text-sm">Floating Action Button</p><p class="text-sm" style="color:rgba(255,255,255,.4)">Fixed in the thumb zone while scrolling &mdash; Material Design 3 mobile ergonomics.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider my-12"></div>
+
+<!-- TECH -->
+<section id="tech" class="py-32 px-6 max-w-6xl mx-auto">
+  <div class="fade-up text-center mb-20">
+    <div class="tag mb-6">Built With</div>
+    <h2 class="font-display text-4xl md:text-5xl font-black">Frontend Engineering</h2>
+    <p class="mt-4 max-w-xl mx-auto" style="color:rgba(255,255,255,.4)">Modern tooling chosen to deliver native-feel performance in a web browser.</p>
+  </div>
+  <div class="grid md:grid-cols-3 gap-6 mb-12">
+    <div class="card fade-up"><div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 font-black text-lg" style="background:rgba(59,130,246,.15);color:#60a5fa">&#9883;</div><h3 class="text-white font-bold text-lg mb-2">React.js + Vite</h3><p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.4)">Component-driven SPA. 2,316 modules. 571ms build time. Sub-second HMR during development.</p></div>
+    <div class="card fade-up"><div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 font-black text-sm" style="background:rgba(168,85,247,.15);color:#c084fc">FM</div><h3 class="text-white font-bold text-lg mb-2">Framer Motion</h3><p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.4)">Spring-physics page transitions, scroll-linked header blur, SVG path-drawing splash, tap-scale micro-interactions.</p></div>
+    <div class="card fade-up"><div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 font-black text-sm" style="background:rgba(34,197,94,.15);color:#4ade80">CTX</div><h3 class="text-white font-bold text-lg mb-2">Context API + useReducer</h3><p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.4)">Custom Redux-like architecture with deep-merged localStorage hydration. Zero crashes across version updates.</p></div>
+    <div class="card fade-up"><div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 font-black text-sm" style="background:rgba(249,115,22,.15);color:#fb923c">CSS</div><h3 class="text-white font-bold text-lg mb-2">Design Token System</h3><p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.4)">CSS variables (tokens.css) for all colors, surfaces, typography. Instant dark-mode consistency across 25+ screens.</p></div>
+    <div class="card fade-up"><div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 font-black text-sm" style="background:rgba(234,179,8,.15);color:#facc15">API</div><h3 class="text-white font-bold text-lg mb-2">CoinGecko API</h3><p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.4)">Live market data via custom useCoinGecko React hook with smart caching and graceful error fallback states.</p></div>
+    <div class="card fade-up"><div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 font-black text-sm" style="background:rgba(239,68,68,.15);color:#f87171">CD</div><h3 class="text-white font-bold text-lg mb-2">Vercel + GitHub CI/CD</h3><p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.4)">Auto-deploy on every push to main. Globally distributed CDN. Zero-config. Zero downtime.</p></div>
+  </div>
+  <div class="card fade-up mb-10">
+    <h3 class="text-white font-bold text-xl mb-6">Key Technical Achievements</h3>
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="flex gap-3"><div class="dot mt-1.5 flex-shrink-0"></div><div><p class="text-white font-medium text-sm">Scroll-Linked Glassmorphism</p><p class="text-sm mt-1" style="color:rgba(255,255,255,.4)">useScroll + useTransform interpolates backdrop-filter:blur and opacity in real time as the user scrolls.</p></div></div>
+      <div class="flex gap-3"><div class="dot mt-1.5 flex-shrink-0"></div><div><p class="text-white font-medium text-sm">SVG Path-Drawing Splash</p><p class="text-sm mt-1" style="color:rgba(255,255,255,.4)">Framer Motion pathLength keyframes animate the actual logo.svg &mdash; each stroke draws itself on boot.</p></div></div>
+      <div class="flex gap-3"><div class="dot mt-1.5 flex-shrink-0"></div><div><p class="text-white font-medium text-sm">Mobile-First Screen Architecture</p><p class="text-sm mt-1" style="color:rgba(255,255,255,.4)">Custom PhoneFrame + Screen wrappers enforce safe-area insets and consistent spacing across all 25+ routes.</p></div></div>
+      <div class="flex gap-3"><div class="dot mt-1.5 flex-shrink-0"></div><div><p class="text-white font-medium text-sm">Advanced Chart Component</p><p class="text-sm mt-1" style="color:rgba(255,255,255,.4)">Renders MA, EMA, BOLL, SAR, MACD on HTML Canvas with a custom WebGL-inspired ShaderBackground.</p></div></div>
+    </div>
+  </div>
+  <div class="fade-up flex flex-wrap gap-3 justify-center">
+    <span class="pill">React 18</span><span class="pill">Vite 8</span><span class="pill">Framer Motion</span><span class="pill">React Router DOM</span><span class="pill">CSS Variables</span><span class="pill">CoinGecko API</span><span class="pill">Context API</span><span class="pill">useReducer</span><span class="pill">localStorage</span><span class="pill">Glassmorphism</span><span class="pill">SVG Animation</span><span class="pill">HTML Canvas</span><span class="pill">Vercel</span><span class="pill">GitHub CI/CD</span>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FRONTEND TYPE -->
+<section class="py-32 px-6 max-w-4xl mx-auto text-center">
+  <div class="fade-up">
+    <div class="tag mb-6">Development Type</div>
+    <h2 class="font-display text-4xl md:text-5xl font-black mb-8 gradient-text">Frontend Development</h2>
+    <p class="text-lg leading-relaxed mb-12 max-w-2xl mx-auto" style="color:rgba(255,255,255,.5)">A fully production-grade <strong class="text-white">Single Page Application (SPA)</strong> built with modern frontend engineering. Every pixel, interaction, and animation was hand-crafted in code &mdash; no template, no drag-and-drop.</p>
+    <div class="grid md:grid-cols-3 gap-6 text-left">
+      <div class="card text-center"><div class="text-4xl mb-3">&#128241;</div><h4 class="text-white font-semibold mb-2">Mobile-First SPA</h4><p class="text-sm" style="color:rgba(255,255,255,.4)">Engineered for touch, thumb reach, and sub-100ms feedback across 25+ screens.</p></div>
+      <div class="card text-center"><div class="text-4xl mb-3">&#127912;</div><h4 class="text-white font-semibold mb-2">UI/UX Engineering</h4><p class="text-sm" style="color:rgba(255,255,255,.4)">Design system tokens, semantic color, motion design, and glassmorphism baked in.</p></div>
+      <div class="card text-center"><div class="text-4xl mb-3">&#128640;</div><h4 class="text-white font-semibold mb-2">Production Deploy</h4><p class="text-sm" style="color:rgba(255,255,255,.4)">Live on Vercel via GitHub CI/CD. Every push auto-deploys to a global CDN.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer class="py-12 px-6 text-center" style="border-top:1px solid rgba(255,255,255,.05)">
+  <p class="font-display font-bold text-white text-xl mb-2">Zenbit Pro</p>
+  <p class="text-sm" style="color:rgba(255,255,255,.3)">Built with React, Framer Motion &amp; a lot of &#9749; &mdash; Deployed on Vercel</p>
+  <a href="https://github.com/Abrockyt/Zenbit" target="_blank" class="inline-block mt-4 text-sm hover:underline" style="color:#4ade80">github.com/Abrockyt/Zenbit &#8599;</a>
+</footer>
+
+<script>
+  gsap.registerPlugin(ScrollTrigger);
+  gsap.utils.toArray('.fade-up').forEach(function(el) {
+    gsap.fromTo(el, { opacity:0, y:50 }, {
+      opacity:1, y:0, duration:0.8, ease:'power3.out',
+      scrollTrigger:{ trigger:el, start:'top 88%', toggleActions:'play none none none' }
+    });
+  });
+</script>
+</body>
+</html>
