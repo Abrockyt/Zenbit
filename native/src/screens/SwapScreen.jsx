@@ -94,7 +94,7 @@ export default function SwapScreen({ navigation }) {
   }
 
   return (
-    <Screen footer={<TabBar navigation={navigation} active="Swap" />}>
+    <Screen>
       <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600", marginBottom: spacing.lg }}>Swap tokens</Text>
 
       {error ? (

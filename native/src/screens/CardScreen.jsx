@@ -34,7 +34,7 @@ export default function CardScreen({ navigation }) {
   };
 
   return (
-    <Screen footer={<TabBar navigation={navigation} active="Card" />}>
+    <Screen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
         <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600" }}>Card</Text>
         <IconButton icon="settings" onPress={() => navigation.navigate("Settings")} />

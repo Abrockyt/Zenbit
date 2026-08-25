@@ -54,11 +54,19 @@ function subscribe(key, loader, onUpdate) {
   if (entry.data === undefined && !entry.inFlight) run();
   if (!entry.timer) entry.timer = setInterval(run, POLL_MS);
 
+  // Deliberately never delete the cache entry itself, only stop its poll
+  // timer once nobody's subscribed. React re-mounts components once in dev
+  // (StrictMode-style double-invoke) — if unmount A raced ahead of its
+  // in-flight fetch and deleted the entry, the fetch would resolve into an
+  // orphaned object nobody could see, and mount B would start over from an
+  // empty cache, which is exactly the kind of race that made data
+  // intermittently never render. Keeping the entry alive means mount B
+  // reuses the same object mount A's fetch is still populating.
   return () => {
     entry.subscribers.delete(onUpdate);
-    if (entry.subscribers.size === 0) {
+    if (entry.subscribers.size === 0 && entry.timer) {
       clearInterval(entry.timer);
-      cache.delete(key);
+      entry.timer = null;
     }
   };
 }

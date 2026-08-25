@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, FlatList, Pressable } from "react-native";
+import { View, Text, FlatList, Pressable, Image } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Screen, TabBar, IconButton, Chip, Avatar, Sheet, Button, Banner, EmptyState, colors, spacing, radius } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
@@ -8,22 +8,28 @@ import { relativeTime } from "../../lib/time";
 
 const FILTERS = [{ value: "all", label: "All" }, { value: "following", label: "Following" }, { value: "trending", label: "Trending" }];
 
+// Real photos, not fabricated: pravatar.cc for author headshots and Unsplash
+// for attached post images, both already present in the seed data
+// (state/store.jsx) but never wired up to actually render until now.
 function PostRow({ post, onLike, onOpen, onOverflow }) {
   return (
-    <Pressable onPress={onOpen} style={{ flexDirection: "row", gap: 10, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.sm }}>
-      <Avatar initials={post.author.initials} size={34} />
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: colors.textTertiary, fontSize: 12 }}>@{post.author.handle} · {relativeTime(post.createdAt)}</Text>
-        <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 3 }}>{post.body}</Text>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 16, marginTop: 8 }}>
-          <Pressable onPress={onLike} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Feather name="heart" size={14} color={post.liked ? colors.down : colors.textTertiary} />
-            <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{post.likes}</Text>
-          </Pressable>
-          <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{post.replies.length} replies</Text>
+    <Pressable onPress={onOpen} style={{ gap: 10, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.sm }}>
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        <Avatar uri={post.author.avatarUrl} initials={post.author.initials} size={34} />
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: colors.textTertiary, fontSize: 12 }}>@{post.author.handle} · {relativeTime(post.createdAt)}</Text>
+          <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 3 }}>{post.body}</Text>
         </View>
+        <Pressable onPress={onOverflow} hitSlop={8}><Feather name="more-horizontal" size={16} color={colors.textTertiary} /></Pressable>
       </View>
-      <Pressable onPress={onOverflow} hitSlop={8}><Feather name="more-horizontal" size={16} color={colors.textTertiary} /></Pressable>
+      {post.image ? <Image source={{ uri: post.image }} style={{ width: "100%", height: 180, borderRadius: radius.md, marginTop: 2 }} /> : null}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+        <Pressable onPress={onLike} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Feather name="heart" size={14} color={post.liked ? colors.down : colors.textTertiary} />
+          <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{post.likes}</Text>
+        </Pressable>
+        <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{post.replies.length} replies</Text>
+      </View>
     </Pressable>
   );
 }
@@ -42,7 +48,7 @@ export default function FeedScreen({ navigation }) {
   const refresh = useAsyncAction(async () => {}, { label: "Refreshing feed" });
 
   return (
-    <Screen scroll={false} footer={<TabBar navigation={navigation} active="Feed" />}>
+    <Screen scroll={false}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
         <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600" }}>Social</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>

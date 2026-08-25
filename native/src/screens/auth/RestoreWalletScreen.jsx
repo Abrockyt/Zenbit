@@ -39,7 +39,7 @@ export default function RestoreWalletScreen({ navigation }) {
 
   const go = async () => {
     await restore.run();
-    if (!restore.isError) navigation.reset({ index: 0, routes: [{ name: "Home" }] });
+    if (!restore.isError) navigation.reset({ index: 0, routes: [{ name: "MainTabs" }] });
   };
 
   return (

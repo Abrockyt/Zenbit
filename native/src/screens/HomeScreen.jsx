@@ -74,7 +74,7 @@ export default function HomeScreen({ navigation }) {
   const rows = tab === "watchlist" ? (markets ?? []).filter((m) => state.watchlist.includes(m.id)) : (markets ?? []).filter((m) => holdings.some((h) => h.id === m.id));
 
   return (
-    <Screen scroll={false} footer={<TabBar navigation={navigation} active="Home" />}>
+    <Screen scroll={false}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surfaceRaised, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 6, paddingRight: 14 }}>
           <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surfaceCard }} />

@@ -28,7 +28,7 @@ export default function PasscodeScreen({ navigation }) {
       dispatch({ type: "onboarding/set", patch: { passcodeSet: true } });
       dispatch({ type: "settings/setAppLock", patch: { passcode: true } });
       dispatch({ type: "session/signIn", isNewUser: state.onboarding.isNewUser });
-      navigation.reset({ index: 0, routes: [{ name: "Home" }] });
+      navigation.reset({ index: 0, routes: [{ name: "MainTabs" }] });
     }, 250);
   }
 

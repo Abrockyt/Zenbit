@@ -37,7 +37,7 @@ export default function PostDetailScreen({ navigation, route }) {
       <Header title="Post" onBack={() => navigation.goBack()} right={<IconButton icon="flag" size={16} onPress={() => { dispatch({ type: "social/report", report: { id: `rep${Date.now()}`, target: post.author.handle, kind: "post", reason: "Reported from post", detail: "", at: Date.now(), status: "received" } }); toast("Reported. Thanks — we'll take a look."); }} />} />
 
       <View style={{ flexDirection: "row", gap: 10, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.md }}>
-        <Avatar initials={post.author.initials} size={34} />
+        <Avatar uri={post.author.avatarUrl} initials={post.author.initials} size={34} />
         <View style={{ flex: 1 }}>
           <Text style={{ color: colors.textTertiary, fontSize: 12 }}>@{post.author.handle} · {relativeTime(post.createdAt)}</Text>
           <Text style={{ color: colors.textPrimary, fontSize: 14, marginTop: 3 }}>{post.body}</Text>

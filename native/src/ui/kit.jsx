@@ -1,34 +1,53 @@
-import { useEffect } from "react";
-import { View, Text, Pressable, StyleSheet, ScrollView, Switch as RNSwitch, TextInput, Image, Modal } from "react-native";
+import { useEffect, useRef } from "react";
+import { Animated, View, Text, Pressable, StyleSheet, ScrollView, Switch as RNSwitch, TextInput, Image, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
-import Animated, { FadeIn, FadeInDown, SlideInDown, useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
 import { colors, spacing, radius, gradients, fonts, shadow } from "../theme";
 import RadialBackground from "./RadialBackground";
 
 /**
  * Shared RN UI kit — visual pass two.
  *
- * Pass one ported *behavior* only (flat colors, no motion) to get all 46
- * screens working fast. This pass ports the web app's actual look through
- * the same shared components, so every screen picks it up at once: glass
- * cards (BlurView, matching --surface-card + --grad-card), the gradient
- * screen background (--grad-screen), a real floating glass tab bar with a
- * sliding indicator, press/entrance animation via Reanimated (the RN
- * equivalent of the web app's Framer Motion), and the actual type family
- * (Hanken Grotesk / Geist Mono, loaded in App.tsx) instead of system font.
+ * Animation runs on React Native's built-in Animated API, not
+ * react-native-reanimated. Reanimated's native worklets module crashed
+ * inside Expo Go with "Exception in HostFunction: NativeWorklets" on a real
+ * device — Expo Go ships one fixed native Reanimated build, and neither v4
+ * nor a downgrade to v3 matched it (confirmed by testing both against a live
+ * dev-server connection, which surfaces the real native crash instead of a
+ * silent blank screen). Animated ships inside react-native core itself, so
+ * there's no separate native module to mismatch — it can't hit this class
+ * of bug. Every animation this kit does (press-scale, sheet slide-up, result
+ * fade-in, the tab bar's sliding indicator) is well within what Animated
+ * handles natively.
+ *
+ * Also ports the web app's actual look through the shared components, so
+ * every screen picks it up at once: glass cards (BlurView, matching
+ * --surface-card / --grad-card), the gradient screen background
+ * (--grad-screen), a real floating glass tab bar, and the actual type
+ * family (Hanken Grotesk / Geist Mono, loaded in App.tsx).
  */
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function usePressScale(to = 0.96) {
-  const scale = useSharedValue(1);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const onPressIn = () => { scale.value = withTiming(to, { duration: 90 }); };
-  const onPressOut = () => { scale.value = withSpring(1, { damping: 14, stiffness: 260 }); };
-  return { style, onPressIn, onPressOut };
+  const scale = useRef(new Animated.Value(1)).current;
+  const onPressIn = () => Animated.timing(scale, { toValue: to, duration: 90, useNativeDriver: true }).start();
+  const onPressOut = () => Animated.spring(scale, { toValue: 1, friction: 6, tension: 220, useNativeDriver: true }).start();
+  return { style: { transform: [{ scale }] }, onPressIn, onPressOut };
+}
+
+// Simple mount-time fade/slide-in, replacing Reanimated's entering= prop.
+function useEnterAnimation({ fromY = 0 } = {}) {
+  const progress = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(progress, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+  }, []);
+  return {
+    opacity: progress,
+    transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [fromY, 0] }) }],
+  };
 }
 
 // No per-screen entrance animation here on purpose — React Navigation's
@@ -300,15 +319,18 @@ const TABS = [
 ];
 export function TabBar({ navigation, active }) {
   const index = Math.max(0, TABS.findIndex((t) => t.key === active));
-  const x = useSharedValue(index);
+  const x = useRef(new Animated.Value(index)).current;
 
   useEffect(() => {
-    x.value = withSpring(index, { damping: 18, stiffness: 220 });
+    Animated.spring(x, { toValue: index, friction: 8, tension: 220, useNativeDriver: false }).start();
   }, [index]);
 
-  const indicatorStyle = useAnimatedStyle(() => ({
-    left: `${(x.value / TABS.length) * 100}%`,
-  }));
+  const indicatorStyle = {
+    left: x.interpolate({
+      inputRange: TABS.map((_, i) => i),
+      outputRange: TABS.map((_, i) => `${(i / TABS.length) * 100}%`),
+    }),
+  };
 
   return (
     <View style={styles.tabBarWrap}>
@@ -349,39 +371,49 @@ export function PriceRow({ symbol, name, price, changePct, holding, iconUrl, onP
   );
 }
 
+function SheetBody({ title, children }) {
+  const enter = useEnterAnimation({ fromY: 60 });
+  return (
+    <Animated.View style={[styles.sheetBody, enter]}>
+      <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <View style={styles.sheetHandle} />
+      {title ? <Text style={styles.sheetTitle}>{title}</Text> : null}
+      {children}
+    </Animated.View>
+  );
+}
 export function Sheet({ open, onClose, title, children }) {
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.sheetBackdrop} onPress={onClose} />
-      {open && (
-        <Animated.View entering={SlideInDown.springify().damping(18).stiffness(220)} style={styles.sheetBody}>
-          <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFillObject} />
-          <View style={styles.sheetHandle} />
-          {title ? <Text style={styles.sheetTitle}>{title}</Text> : null}
-          {children}
-        </Animated.View>
-      )}
+      {open && <SheetBody title={title}>{children}</SheetBody>}
     </Modal>
   );
 }
 
-export function ResultDialog({ tone = "success", title, message, primaryLabel, onPrimary, secondaryLabel, onSecondary }) {
+function ResultCard({ tone, title, message, primaryLabel, onPrimary, secondaryLabel, onSecondary }) {
   const tint = tone === "success" ? colors.up : colors.down;
+  const enter = useEnterAnimation({ fromY: 24 });
+  return (
+    <Animated.View style={[styles.resultCard, enter]}>
+      <View style={[styles.resultIcon, { backgroundColor: tint + "20", borderColor: tint }]}>
+        <Feather name={tone === "success" ? "check" : "x"} size={26} color={tint} />
+      </View>
+      <Text style={styles.resultTitle}>{title}</Text>
+      <Text style={styles.resultMessage}>{message}</Text>
+      <View style={{ width: "100%", gap: spacing.sm, marginTop: spacing.md }}>
+        <Button onPress={onPrimary}>{primaryLabel}</Button>
+        {secondaryLabel && <Button variant="secondary" onPress={onSecondary}>{secondaryLabel}</Button>}
+      </View>
+    </Animated.View>
+  );
+}
+export function ResultDialog({ tone = "success", title, message, primaryLabel, onPrimary, secondaryLabel, onSecondary }) {
   return (
     <Modal visible transparent animationType="fade">
       <View style={styles.resultBackdrop}>
         <LinearGradient colors={gradients.screen} style={StyleSheet.absoluteFillObject} />
-        <Animated.View entering={FadeInDown.duration(320)} style={styles.resultCard}>
-          <View style={[styles.resultIcon, { backgroundColor: tint + "20", borderColor: tint }]}>
-            <Feather name={tone === "success" ? "check" : "x"} size={26} color={tint} />
-          </View>
-          <Text style={styles.resultTitle}>{title}</Text>
-          <Text style={styles.resultMessage}>{message}</Text>
-          <View style={{ width: "100%", gap: spacing.sm, marginTop: spacing.md }}>
-            <Button onPress={onPrimary}>{primaryLabel}</Button>
-            {secondaryLabel && <Button variant="secondary" onPress={onSecondary}>{secondaryLabel}</Button>}
-          </View>
-        </Animated.View>
+        <ResultCard tone={tone} title={title} message={message} primaryLabel={primaryLabel} onPrimary={onPrimary} secondaryLabel={secondaryLabel} onSecondary={onSecondary} />
       </View>
     </Modal>
   );

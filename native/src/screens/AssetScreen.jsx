@@ -18,7 +18,7 @@ export default function AssetScreen({ navigation }) {
   const total = priced.reduce((s, h) => s + h.value, 0);
 
   return (
-    <Screen scroll={false} footer={<TabBar navigation={navigation} active="Asset" />}>
+    <Screen scroll={false}>
       <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600", marginBottom: spacing.md }}>Your assets</Text>
       <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Assets balance</Text>
       <Text style={{ color: colors.textPrimary, fontSize: 28, fontWeight: "700", marginTop: 4, marginBottom: spacing.lg }}>

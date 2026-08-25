@@ -22,14 +22,14 @@ export default function ProfileScreen({ navigation }) {
   };
 
   return (
-    <Screen footer={<TabBar navigation={navigation} active="Profile" />}>
+    <Screen>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
         <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600" }}>Profile</Text>
         <IconButton icon="settings" onPress={() => navigation.navigate("Settings")} />
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: spacing.lg }}>
-        <Avatar initials={user.avatarInitials} size={56} />
+        <Avatar uri={user.avatarUrl} initials={user.avatarInitials} size={56} />
         <View>
           <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "600" }}>{user.name}</Text>
           <Text style={{ color: colors.textTertiary, fontSize: 13 }}>{user.email}</Text>

@@ -27,14 +27,10 @@ const NavTheme = {
 };
 
 import WelcomeScreen from "./src/screens/WelcomeScreen";
-import HomeScreen from "./src/screens/HomeScreen";
-import MarketScreen from "./src/screens/MarketScreen";
+import MainTabs from "./src/navigation/MainTabs";
 import WatchlistScreen from "./src/screens/WatchlistScreen";
 import AssetScreen from "./src/screens/AssetScreen";
-import ProfileScreen from "./src/screens/ProfileScreen";
 import CoinDetailScreen from "./src/screens/CoinDetailScreen";
-import SwapScreen from "./src/screens/SwapScreen";
-import CardScreen from "./src/screens/CardScreen";
 import CardDetailScreen from "./src/screens/CardDetailScreen";
 import RecentActivityScreen from "./src/screens/RecentActivityScreen";
 import TransactionDetailScreen from "./src/screens/TransactionDetailScreen";
@@ -61,7 +57,6 @@ import AddFundsScreen from "./src/screens/money/AddFundsScreen";
 import PaymentMethodsScreen from "./src/screens/money/PaymentMethodsScreen";
 import TradeFlowScreen from "./src/screens/money/TradeFlowScreen";
 
-import FeedScreen from "./src/screens/social/FeedScreen";
 import ComposeScreen from "./src/screens/social/ComposeScreen";
 import PostDetailScreen from "./src/screens/social/PostDetailScreen";
 import UserProfileScreen from "./src/screens/social/UserProfileScreen";
@@ -152,17 +147,13 @@ export default function App() {
           <Stack.Screen name="KycDocuments" component={KycDocumentsScreen} />
           <Stack.Screen name="KycStatus" component={KycStatusScreen} />
 
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Market" component={MarketScreen} />
+          <Stack.Screen name="MainTabs" component={MainTabs} />
           <Stack.Screen name="CoinDetail" component={CoinDetailScreen} />
           <Stack.Screen name="Watchlist" component={WatchlistScreen} />
-          <Stack.Screen name="Swap" component={SwapScreen} />
           <Stack.Screen name="Asset" component={AssetScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="RecentActivity" component={RecentActivityScreen} />
           <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
 
-          <Stack.Screen name="Card" component={CardScreen} />
           <Stack.Screen name="CardDetail" component={CardDetailScreen} />
 
           <Stack.Screen name="Send" component={SendScreen} />
@@ -173,7 +164,6 @@ export default function App() {
           <Stack.Screen name="AddFunds" component={AddFundsScreen} />
           <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
 
-          <Stack.Screen name="Feed" component={FeedScreen} />
           <Stack.Screen name="Compose" component={ComposeScreen} />
           <Stack.Screen name="PostDetail" component={PostDetailScreen} />
           <Stack.Screen name="UserProfile" component={UserProfileScreen} />

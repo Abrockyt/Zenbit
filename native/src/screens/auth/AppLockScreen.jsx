@@ -17,7 +17,7 @@ export default function AppLockScreen({ navigation }) {
 
   const unlock = () => {
     dispatch({ type: "session/unlock" });
-    navigation.reset({ index: 0, routes: [{ name: "Home" }] });
+    navigation.reset({ index: 0, routes: [{ name: "MainTabs" }] });
   };
 
   const submit = (value) => {

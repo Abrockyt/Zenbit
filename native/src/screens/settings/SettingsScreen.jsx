@@ -13,7 +13,7 @@ export default function SettingsScreen({ navigation }) {
   const notifOn = Object.values(s.notifications).filter(Boolean).length;
 
   return (
-    <Screen footer={<TabBar navigation={navigation} active="Profile" />}>
+    <Screen>
       <Header title="Settings" onBack={() => navigation.navigate("Profile")} />
 
       <Text style={{ color: colors.textTertiary, fontSize: 12, marginBottom: 6 }}>Account</Text>

@@ -2,11 +2,13 @@ import { View, Text } from "react-native";
 import { Screen, Header, Button, Avatar, Row, EmptyState, colors, spacing, radius } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 
+// Same pravatar.cc seeds as the seed posts in state/store.jsx, so the same
+// person looks the same wherever they show up.
 const DIRECTORY = {
-  "mara.eth": { name: "Mara Osei", initials: "MO", bio: "Position sizing over prediction. Ex-market maker." },
-  "0xquiet": { name: "Ines Duarte", initials: "ID", bio: "Funding rates and quiet charts." },
-  "leo.base": { name: "Leo Marchetti", initials: "LM", bio: "Self-custody maximalist. Test your backups." },
-  toby: { name: "Toby Vance", initials: "TV", bio: "Learning in public." },
+  "mara.eth": { name: "Mara Osei", initials: "MO", bio: "Position sizing over prediction. Ex-market maker.", avatarUrl: "https://i.pravatar.cc/150?u=mara" },
+  "0xquiet": { name: "Ines Duarte", initials: "ID", bio: "Funding rates and quiet charts.", avatarUrl: "https://i.pravatar.cc/150?u=ines" },
+  "leo.base": { name: "Leo Marchetti", initials: "LM", bio: "Self-custody maximalist. Test your backups.", avatarUrl: "https://i.pravatar.cc/150?u=leo" },
+  toby: { name: "Toby Vance", initials: "TV", bio: "Learning in public.", avatarUrl: "https://i.pravatar.cc/150?u=toby" },
 };
 
 export default function UserProfileScreen({ navigation, route }) {
@@ -15,7 +17,7 @@ export default function UserProfileScreen({ navigation, route }) {
   const toast = useToast();
 
   const isMe = handle === "you";
-  const person = isMe ? { name: state.session.user.name, initials: state.session.user.avatarInitials, bio: "This is you." } : DIRECTORY[handle] ?? { name: `@${handle}`, initials: handle.slice(0, 2).toUpperCase(), bio: "" };
+  const person = isMe ? { name: state.session.user.name, initials: state.session.user.avatarInitials, avatarUrl: state.session.user.avatarUrl, bio: "This is you." } : DIRECTORY[handle] ?? { name: `@${handle}`, initials: handle.slice(0, 2).toUpperCase(), bio: "" };
   const following = state.social.following.includes(handle);
   const muted = state.social.muted.includes(handle);
   const blocked = state.social.blocked.includes(handle);
@@ -36,7 +38,7 @@ export default function UserProfileScreen({ navigation, route }) {
 
       <View style={{ gap: 14, padding: 20, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.md }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-          <Avatar initials={person.initials} size={56} />
+          <Avatar uri={person.avatarUrl} initials={person.initials} size={56} />
           <View>
             <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "600" }}>{person.name}</Text>
             <Text style={{ color: colors.textTertiary, fontSize: 12 }}>@{handle}</Text>

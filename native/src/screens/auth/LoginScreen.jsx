@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { View, Text } from "react-native";
-import { Screen, Header, Button, TextField, TextButton, Banner, colors, spacing } from "../../ui/kit";
+import { View, Text, Pressable } from "react-native";
+import { Screen, Header, Button, TextField, TextButton, Banner, colors, spacing, radius, fonts } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";
 
@@ -22,7 +22,15 @@ export default function LoginScreen({ navigation }) {
 
   const submit = async () => {
     await signIn.run();
-    if (!signIn.isError) navigation.replace("Home");
+    if (!signIn.isError) navigation.replace("MainTabs");
+  };
+
+  // No real OAuth backend exists for this demo, so social sign-in is
+  // honest about what it actually does: signs straight into the same
+  // demo account, same as the "Continue with Google" flow on web.
+  const socialSignIn = () => {
+    dispatch({ type: "session/signIn" });
+    navigation.replace("MainTabs");
   };
 
   return (
@@ -57,6 +65,22 @@ export default function LoginScreen({ navigation }) {
 
       <View style={{ gap: spacing.md, marginTop: spacing.lg }}>
         <Button onPress={submit} loading={signIn.isLoading} disabled={!email || !password}>Log in</Button>
+
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: colors.borderSubtle }} />
+          <Text style={{ color: colors.textTertiary, fontSize: 12 }}>OR</Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: colors.borderSubtle }} />
+        </View>
+
+        <View style={{ flexDirection: "row", gap: spacing.sm }}>
+          <Pressable onPress={socialSignIn} style={{ flex: 1, height: 50, borderRadius: radius.md, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: "#000", fontSize: 15, fontFamily: fonts.medium }}>Google</Text>
+          </Pressable>
+          <Pressable onPress={socialSignIn} style={{ flex: 1, height: 50, borderRadius: radius.md, backgroundColor: "#000", borderWidth: 1, borderColor: colors.borderDefault, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: colors.white, fontSize: 15, fontFamily: fonts.medium }}>Apple</Text>
+          </Pressable>
+        </View>
+
         <Button variant="secondary" onPress={() => navigation.navigate("RestoreWallet")}>Restore from recovery phrase</Button>
         <TextButton onPress={() => { setResetSent(true); toast("Reset code sent to your email."); }}>Forgot your password?</TextButton>
       </View>
