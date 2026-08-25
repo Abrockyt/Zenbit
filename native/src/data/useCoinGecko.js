@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // Real CoinGecko public API — no key required for these endpoints, rate
 // limited to roughly 10-30 calls/min on the free tier.
@@ -51,6 +51,11 @@ function subscribe(key, loader, onUpdate, intervalMs = POLL_MS) {
     return entry.inFlight;
   };
 
+  // Kept on the entry so a screen can force a retry after a failure without
+  // waiting for the next poll tick — an error the user can only wait out
+  // isn't a recovery path.
+  entry.run = run;
+
   if (entry.data === undefined && !entry.inFlight) run();
   // The screen actually looking at this data (e.g. the live chart) can ask
   // for a faster cadence than the default background poll — the fastest
@@ -85,22 +90,33 @@ function subscribe(key, loader, onUpdate, intervalMs = POLL_MS) {
 function useShared(key, loader, intervalMs) {
   const [, setTick] = useState(0);
   useEffect(() => subscribe(key, loader, () => setTick((t) => t + 1), intervalMs), [key, intervalMs]);
+
+  // Clears the stored error and refires immediately, so a "Retry" control
+  // actually retries rather than just re-rendering the same failed state.
+  const refetch = useCallback(() => {
+    const e = cache.get(key);
+    if (!e) return;
+    e.error = null;
+    e.subscribers.forEach((fn) => fn());
+    e.run?.();
+  }, [key]);
+
   const entry = cache.get(key);
   // Once a fetch has resolved — success or failure — this is no longer
   // "loading". Without the !error check, a request that keeps failing
   // (rate limit, offline) leaves data permanently undefined, so `loading`
   // never flips false and any UI keyed off it (skeletons) spins forever
   // even while the error banner is already showing above it.
-  return { data: entry?.data ?? null, loading: entry?.data === undefined && !entry?.error, error: entry?.error ?? null };
+  return { data: entry?.data ?? null, loading: entry?.data === undefined && !entry?.error, error: entry?.error ?? null, refetch };
 }
 
 export function useMarkets(ids, { vs = "usd", perPage = 100 } = {}) {
   const idParam = ids ? (Array.isArray(ids) ? ids.join(",") : ids) : DEFAULT_IDS;
   const key = `markets:${idParam}:${vs}:${perPage}`;
-  const { data, loading, error } = useShared(key, () =>
+  const { data, loading, error, refetch } = useShared(key, () =>
     getJSON(`${BASE}/coins/markets?vs_currency=${vs}&ids=${idParam}&order=market_cap_desc&per_page=${perPage}&page=1&sparkline=true&price_change_percentage=24h`)
   );
-  return { data: data ?? [], loading, error };
+  return { data: data ?? [], loading, error, refetch };
 }
 
 // Faster than the default 60s background poll — this is the live price a
@@ -114,13 +130,13 @@ const LIVE_POLL_MS = 20_000;
 
 export function useCoinDetail(id) {
   const key = id ? `detail:${id}` : null;
-  const { data, loading, error } = useShared(
+  const { data, loading, error, refetch } = useShared(
     key ?? "detail:none",
     () => getJSON(`${BASE}/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`),
     LIVE_POLL_MS
   );
-  if (!id) return { data: null, loading: false, error: null };
-  return { data, loading, error };
+  if (!id) return { data: null, loading: false, error: null, refetch };
+  return { data, loading, error, refetch };
 }
 
 // Historical chart is fetched once per id+range and cached — CoinGecko's
@@ -172,14 +188,14 @@ export function useCoinChart(id, days = 7) {
 // stale while the price above it keeps ticking.
 export function useCoinOHLC(id, days = 1) {
   const key = id ? `ohlc:${id}:${days}` : null;
-  const { data, loading, error } = useShared(
+  const { data, loading, error, refetch } = useShared(
     key ?? "ohlc:none",
     () => getJSON(`${BASE}/coins/${id}/ohlc?vs_currency=usd&days=${days}`).then(
       (json) => (json || []).map(([t, open, high, low, close]) => ({ t, open, high, low, close }))
     )
   );
   if (!id) return { data: [], loading: false, error: null };
-  return { data: data ?? [], loading, error };
+  return { data: data ?? [], loading, error, refetch };
 }
 
 // Real per-interval volume. CoinGecko's /ohlc endpoint returns no volume at
@@ -190,14 +206,14 @@ export function useCoinOHLC(id, days = 1) {
 // (they don't — the two endpoints bucket differently).
 export function useCoinVolume(id, days = 1) {
   const key = id ? `vol:${id}:${days}` : null;
-  const { data, loading, error } = useShared(
+  const { data, loading, error, refetch } = useShared(
     key ?? "vol:none",
     () => getJSON(`${BASE}/coins/${id}/market_chart?vs_currency=usd&days=${days}`).then(
       (json) => (json.total_volumes || []).map(([t, v]) => ({ t, v }))
     )
   );
   if (!id) return { data: [], loading: false, error: null };
-  return { data: data ?? [], loading, error };
+  return { data: data ?? [], loading, error, refetch };
 }
 
 // Real exchange markets for this coin — per-exchange last price, spread and
@@ -207,14 +223,14 @@ export function useCoinVolume(id, days = 1) {
 // quoted prices and spreads.
 export function useCoinTickers(id) {
   const key = id ? `tickers:${id}` : null;
-  const { data, loading, error } = useShared(
+  const { data, loading, error, refetch } = useShared(
     key ?? "tickers:none",
     () => getJSON(`${BASE}/coins/${id}/tickers?include_exchange_logo=true&depth=true`).then(
       (json) => (json.tickers || []).slice(0, 25)
     )
   );
   if (!id) return { data: [], loading: false, error: null };
-  return { data: data ?? [], loading, error };
+  return { data: data ?? [], loading, error, refetch };
 }
 
 export function useCoinSearch(query, delay = 350) {

@@ -1,5 +1,5 @@
-import { Fragment, useMemo } from "react";
-import { View, Text, useWindowDimensions } from "react-native";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Easing, View, Text, useWindowDimensions } from "react-native";
 import Svg, { Line, Rect, Polyline, Circle } from "react-native-svg";
 import { colors, fonts } from "../theme";
 import { sma, ema, bollinger, parabolicSar, superTrend, avl } from "../lib/indicators";
@@ -100,6 +100,31 @@ export default function CandlestickChart({ candles = [], volumes = [], active = 
     }
   }, [active, candles, closes, vols]);
 
+  // Sweep the candles in left-to-right whenever the series changes (new coin
+  // or new range), so the chart draws itself rather than snapping in. Driven
+  // by an Animated listener writing a reveal count into state, which works
+  // identically on native and web — no reanimated, which Expo Go can't load
+  // (see the note in ui/kit.jsx).
+  const [revealCount, setRevealCount] = useState(0);
+  const sweep = useRef(new Animated.Value(0)).current;
+  const seriesSig = candles.length ? `${candles.length}:${candles[0].t}:${candles[candles.length - 1].t}` : "";
+
+  useEffect(() => {
+    if (!candles.length) return;
+    sweep.setValue(0);
+    const sub = sweep.addListener(({ value }) => {
+      setRevealCount(Math.max(1, Math.round(value * candles.length)));
+    });
+    const anim = Animated.timing(sweep, {
+      toValue: 1,
+      duration: 620,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    });
+    anim.start();
+    return () => { anim.stop(); sweep.removeListener(sub); };
+  }, [seriesSig]);
+
   if (!candles.length) {
     return <View style={{ height }} />;
   }
@@ -127,10 +152,17 @@ export default function CandlestickChart({ candles = [], volumes = [], active = 
   const gridLines = [0, 0.25, 0.5, 0.75, 1];
   const timeTicks = [0, Math.floor(candles.length / 3), Math.floor((candles.length * 2) / 3), candles.length - 1];
 
+  // Scales stay pinned to the FULL series while the sweep runs, so the chart
+  // draws in place instead of rescaling under itself on every frame; only
+  // how much is drawn changes.
+  const shown = Math.min(revealCount || candles.length, candles.length);
+
   const line = (pts, color, key) => {
     if (!pts || pts.length < 2) return null;
     const off = candles.length - pts.length;
-    const d = pts.map((v, i) => `${((off + i) * slot + slot / 2).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    const visible = pts.slice(0, Math.max(0, shown - off));
+    if (visible.length < 2) return null;
+    const d = visible.map((v, i) => `${((off + i) * slot + slot / 2).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
     return <Polyline key={key} points={d} fill="none" stroke={color} strokeWidth={1.3} strokeLinejoin="round" />;
   };
 
@@ -155,7 +187,7 @@ export default function CandlestickChart({ candles = [], volumes = [], active = 
         ))}
 
         {/* Candles */}
-        {candles.map((c, i) => {
+        {candles.slice(0, shown).map((c, i) => {
           const cx = i * slot + slot / 2;
           const up = c.close >= c.open;
           const color = up ? colors.up : colors.down;
@@ -172,7 +204,7 @@ export default function CandlestickChart({ candles = [], volumes = [], active = 
         {/* Indicator overlays */}
         {series.lines?.map((l, i) => line(l.pts, l.color, `l${i}`))}
 
-        {series.dots?.map((d, i) => {
+        {series.dots?.slice(0, Math.max(0, shown - (candles.length - series.dots.length))).map((d, i) => {
           const off = candles.length - series.dots.length;
           return (
             <Circle
@@ -199,7 +231,7 @@ export default function CandlestickChart({ candles = [], volumes = [], active = 
         />
 
         {/* Volume pane */}
-        {candles.map((c, i) => {
+        {candles.slice(0, shown).map((c, i) => {
           const v = vols[i];
           if (!Number.isFinite(v) || !maxVol) return null;
           const h = (v / maxVol) * (VOL_H - 8);

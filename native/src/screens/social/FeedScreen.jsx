@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
-import { View, Text, FlatList, Pressable, Image } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, View, Text, FlatList, Pressable, Image } from "react-native";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { Screen, TabBar, IconButton, TextField, Chip, Avatar, Sheet, Button, Banner, EmptyState, colors, spacing, radius } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";
@@ -8,6 +8,32 @@ import { relativeTime } from "../../lib/time";
 import { DIRECTORY_LIST } from "../../data/directory";
 
 const FILTERS = [{ value: "all", label: "All" }, { value: "following", label: "Following" }, { value: "trending", label: "Trending" }];
+
+// Filled heart + pop on like, outline when not — an outline that only
+// changes colour doesn't read as "this is liked now". The count sits next
+// to it and tints with the state.
+function LikeButton({ liked, count, onPress }) {
+  const pop = useRef(new Animated.Value(1)).current;
+  const first = useRef(true);
+
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    if (!liked) return;
+    Animated.sequence([
+      Animated.timing(pop, { toValue: 1.45, duration: 130, useNativeDriver: true }),
+      Animated.spring(pop, { toValue: 1, friction: 4, tension: 240, useNativeDriver: true }),
+    ]).start();
+  }, [liked]);
+
+  return (
+    <Pressable onPress={onPress} hitSlop={8} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+      <Animated.View style={{ transform: [{ scale: pop }] }}>
+        <Ionicons name={liked ? "heart" : "heart-outline"} size={15} color={liked ? colors.down : colors.textTertiary} />
+      </Animated.View>
+      <Text style={{ color: liked ? colors.down : colors.textTertiary, fontSize: 12 }}>{count}</Text>
+    </Pressable>
+  );
+}
 
 // Real photos, not fabricated: pravatar.cc for author headshots and Unsplash
 // for attached post images, both already present in the seed data
@@ -25,10 +51,7 @@ function PostRow({ post, onLike, onOpen, onOverflow }) {
       </View>
       {post.image ? <Image source={{ uri: post.image }} style={{ width: "100%", height: 180, borderRadius: radius.md, marginTop: 2 }} /> : null}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-        <Pressable onPress={onLike} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <Feather name="heart" size={14} color={post.liked ? colors.down : colors.textTertiary} />
-          <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{post.likes}</Text>
-        </Pressable>
+        <LikeButton liked={post.liked} count={post.likes} onPress={onLike} />
         <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{post.replies.length} replies</Text>
       </View>
     </Pressable>

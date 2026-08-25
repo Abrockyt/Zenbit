@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { View, Text, FlatList, Pressable } from "react-native";
+import { View, Text, FlatList, Pressable, Image } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, TabBar, IconButton, SegmentedControl, Avatar, SkeletonList, EmptyState, colors, spacing, radius, fonts } from "../ui/kit";
+import { Screen, TabBar, IconButton, SegmentedControl, Avatar, SkeletonList, Button, colors, spacing, radius, fonts } from "../ui/kit";
 import { useApp } from "../state/store";
 import { useMarkets } from "../data/useCoinGecko";
 
@@ -36,9 +36,15 @@ function CoinRow({ coin, holding, onPress }) {
   const brand = colors.coin[coin?.symbol] ?? colors.textTertiary;
   return (
     <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, gap: 12 }}>
-      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: brand + "22", alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: brand, fontFamily: fonts.bold, fontSize: 13 }}>{coin?.symbol?.slice(0, 1).toUpperCase()}</Text>
-      </View>
+      {/* The real coin mark CoinGecko ships with every market row. The
+          initial-in-a-circle fallback only shows if a coin has no image. */}
+      {coin?.image ? (
+        <Image source={{ uri: coin.image }} style={{ width: 36, height: 36, borderRadius: 18 }} />
+      ) : (
+        <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: brand + "22", alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ color: brand, fontFamily: fonts.bold, fontSize: 13 }}>{coin?.symbol?.slice(0, 1).toUpperCase()}</Text>
+        </View>
+      )}
       <View style={{ flex: 1 }}>
         <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: fonts.medium }}>{coin?.name}</Text>
         <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{holding ?? coin?.symbol?.toUpperCase()}</Text>
@@ -61,7 +67,7 @@ export default function HomeScreen({ navigation }) {
   const holdings = state.wallet.holdings;
   const [tab, setTab] = useState("top");
 
-  const { data: markets, loading, error } = useMarkets(null, { vs: "usd" });
+  const { data: markets, loading, error, refetch } = useMarkets(null, { vs: "usd" });
 
   const priced = useMemo(
     () => holdings.map((h) => ({ ...h, market: markets?.find((x) => x.id === h.id) })),
@@ -127,10 +133,28 @@ export default function HomeScreen({ navigation }) {
 
       <SegmentedControl options={[{ value: "top", label: "Top Coin" }, { value: "watchlist", label: "Watchlist" }]} value={tab} onChange={setTab} />
 
-      {error && markets?.length > 0 && <Text style={{ color: colors.down, fontSize: 12, marginTop: spacing.sm }}>Couldn't refresh prices — showing last known values.</Text>}
+      {error && markets?.length > 0 && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: spacing.sm }}>
+          <Text style={{ color: colors.down, fontSize: 12, flex: 1 }}>Couldn't refresh — showing last known prices.</Text>
+          <Pressable onPress={refetch} hitSlop={8}>
+            <Text style={{ color: colors.up, fontSize: 12, fontFamily: fonts.medium }}>Retry</Text>
+          </Pressable>
+        </View>
+      )}
 
       {error && !markets?.length ? (
-        <EmptyState icon="wifi-off" title="Price feed unavailable" body="CoinGecko didn't respond. Pull to refresh or check your connection." />
+        <View style={{ alignItems: "center", paddingVertical: 44, gap: 10 }}>
+          <Feather name="wifi-off" size={26} color={colors.textTertiary} />
+          <Text style={{ color: colors.textPrimary, fontSize: 15, fontFamily: fonts.semibold }}>Price feed unavailable</Text>
+          <Text style={{ color: colors.textTertiary, fontSize: 13, textAlign: "center", maxWidth: 270, lineHeight: 18 }}>
+            {String(error).includes("429")
+              ? "The free price feed is rate-limiting. Give it a few seconds and try again."
+              : "CoinGecko didn't respond. Check your connection and try again."}
+          </Text>
+          <View style={{ marginTop: 6, minWidth: 150 }}>
+            <Button onPress={refetch}>Try again</Button>
+          </View>
+        </View>
       ) : loading && !markets?.length ? (
         <View style={{ marginTop: spacing.sm }}><SkeletonList count={6} /></View>
       ) : (

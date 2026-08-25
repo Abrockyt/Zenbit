@@ -3,7 +3,7 @@ import { Animated, View, Text, Pressable, StyleSheet, ScrollView, Switch as RNSw
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, gradients, fonts, shadow } from "../theme";
 import RadialBackground from "./RadialBackground";
 
@@ -138,20 +138,62 @@ export function TextButton({ children, onPress, tone = "secondary" }) {
   );
 }
 
-export function IconButton({ icon, onPress, badge, size = 20 }) {
+// `active` swaps the outline glyph for its filled twin and pops it, the way
+// a favourite/like reads in a real app — an outline that only changes
+// colour doesn't register as "this is now on". Ionicons is used for the
+// toggleable ones because Feather ships outline-only and has no filled
+// star/heart/bell to switch to.
+export function IconButton({ icon, activeIcon, active, onPress, badge, size = 20, activeColor = colors.up, family = "feather" }) {
   const { style: pressStyle, onPressIn, onPressOut } = usePressScale(0.88);
+  const pop = useRef(new Animated.Value(1)).current;
+  const firstRun = useRef(true);
+
+  useEffect(() => {
+    // Don't pop on mount for something that was already on — only on the
+    // actual off -> on transition the user just caused.
+    if (firstRun.current) { firstRun.current = false; return; }
+    if (!active) return;
+    Animated.sequence([
+      Animated.timing(pop, { toValue: 1.38, duration: 130, useNativeDriver: true }),
+      Animated.spring(pop, { toValue: 1, friction: 4, tension: 240, useNativeDriver: true }),
+    ]).start();
+  }, [active]);
+
+  const Glyph = family === "ionicons" ? Ionicons : Feather;
+  const name = active && activeIcon ? activeIcon : icon;
+
   return (
     <AnimatedPressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} style={[pressStyle, styles.iconButton]} hitSlop={8}>
-      <Feather name={icon} size={size} color={colors.textPrimary} />
+      <Animated.View style={{ transform: [{ scale: pop }] }}>
+        <Glyph name={name} size={size} color={active ? activeColor : colors.textPrimary} />
+      </Animated.View>
       {badge ? <View style={styles.badgeDot} /> : null}
     </AnimatedPressable>
   );
 }
 
 export function Row({ icon, title, subtitle, right, onPress, danger }) {
-  const Wrap = onPress ? Pressable : View;
+  // A function style prop is a Pressable-only feature — View silently drops
+  // it, taking the whole row style with it, which left every Row without an
+  // onPress (e.g. a saved payment method) stacking vertically instead of
+  // laying out as a row. Only Pressable gets the function form.
+  if (!onPress) {
+    return (
+      <View style={styles.row}>
+        <RowBody icon={icon} title={title} subtitle={subtitle} right={right} danger={danger} interactive={false} />
+      </View>
+    );
+  }
   return (
-    <Wrap onPress={onPress} style={({ pressed }) => [styles.row, pressed && onPress && { opacity: 0.55 }]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.55 }]}>
+      <RowBody icon={icon} title={title} subtitle={subtitle} right={right} danger={danger} interactive />
+    </Pressable>
+  );
+}
+
+function RowBody({ icon, title, subtitle, right, danger, interactive }) {
+  return (
+    <>
       {icon ? (
         <View style={styles.rowIcon}>
           <Feather name={icon} size={16} color={danger ? colors.down : colors.textSecondary} />
@@ -161,8 +203,8 @@ export function Row({ icon, title, subtitle, right, onPress, danger }) {
         <Text style={[styles.rowTitle, danger && { color: colors.down }]}>{title}</Text>
         {subtitle ? <Text style={styles.rowSubtitle}>{subtitle}</Text> : null}
       </View>
-      {right !== undefined ? right : onPress ? <Feather name="chevron-right" size={18} color={colors.textTertiary} /> : null}
-    </Wrap>
+      {right !== undefined ? right : interactive ? <Feather name="chevron-right" size={18} color={colors.textTertiary} /> : null}
+    </>
   );
 }
 

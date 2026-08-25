@@ -115,8 +115,9 @@ export default function CoinDetailScreen({ navigation, route }) {
   const [bottomTab, setBottomTab] = useState("Markets");
 
   const watched = state.watchlist.includes(id);
-  const { data: coin, loading, error } = useCoinDetail(id);
-  const { data: candles, error: candlesError } = useCoinOHLC(id, range.days);
+  const hasAlert = state.priceAlerts.some((a) => a.coinId === id);
+  const { data: coin, loading, error, refetch } = useCoinDetail(id);
+  const { data: candles, error: candlesError, refetch: refetchCandles } = useCoinOHLC(id, range.days);
   const { data: volumes } = useCoinVolume(id, range.days);
   const { data: tickers, loading: tickersLoading } = useCoinTickers(id);
 
@@ -162,9 +163,14 @@ export default function CoinDetailScreen({ navigation, route }) {
         <View style={{ alignItems: "center", paddingVertical: 60, gap: 10 }}>
           <Feather name="wifi-off" size={26} color={colors.textTertiary} />
           <Text style={{ color: colors.textPrimary, fontSize: 15, fontFamily: fonts.semibold }}>Couldn't load this coin</Text>
-          <Text style={{ color: colors.textTertiary, fontSize: 13, textAlign: "center", maxWidth: 260 }}>
-            The price feed didn't respond. It retries on its own — or go back and open it again.
+          <Text style={{ color: colors.textTertiary, fontSize: 13, textAlign: "center", maxWidth: 270, lineHeight: 18 }}>
+            {String(error).includes("429")
+              ? "The free price feed is rate-limiting right now. Give it a few seconds and try again."
+              : "The price feed didn't respond."}
           </Text>
+          <View style={{ marginTop: 6, minWidth: 150 }}>
+            <Button onPress={refetch}>Try again</Button>
+          </View>
         </View>
       </Screen>
     );
@@ -194,8 +200,23 @@ export default function CoinDetailScreen({ navigation, route }) {
             </View>
           ) : null}
         </View>
-        <IconButton icon={watched ? "star" : "star"} onPress={toggleWatch} size={18} />
-        <IconButton icon="bell" onPress={() => navigation.navigate("PriceAlerts")} size={18} />
+        <IconButton
+          family="ionicons"
+          icon="star-outline"
+          activeIcon="star"
+          active={watched}
+          activeColor="#F5B544"
+          onPress={toggleWatch}
+          size={19}
+        />
+        <IconButton
+          family="ionicons"
+          icon="notifications-outline"
+          activeIcon="notifications"
+          active={hasAlert}
+          onPress={() => navigation.navigate("PriceAlerts")}
+          size={19}
+        />
       </View>
 
       {/* Top tabs */}
@@ -277,11 +298,18 @@ export default function CoinDetailScreen({ navigation, route }) {
                   <Feather name="bar-chart-2" size={24} color={colors.textTertiary} />
                   <Text style={{ color: colors.textPrimary, fontSize: 13.5, fontFamily: fonts.semibold }}>Chart unavailable</Text>
                   <Text style={{ color: colors.textTertiary, fontSize: 12, textAlign: "center", maxWidth: 250, lineHeight: 17 }}>
-                    The {range.label} candles didn't load — the price feed is rate-limiting. It retries automatically.
+                    The {range.label} candles didn't load — the price feed is rate-limiting.
                   </Text>
-                  <Pressable onPress={() => setRange(RANGES[0])} hitSlop={8}>
-                    <Text style={{ color: colors.up, fontSize: 12.5, fontFamily: fonts.medium }}>Back to 24H</Text>
-                  </Pressable>
+                  <View style={{ flexDirection: "row", gap: 18, marginTop: 4 }}>
+                    <Pressable onPress={refetchCandles} hitSlop={8}>
+                      <Text style={{ color: colors.up, fontSize: 12.5, fontFamily: fonts.medium }}>Try again</Text>
+                    </Pressable>
+                    {range.label !== "24H" && (
+                      <Pressable onPress={() => setRange(RANGES[0])} hitSlop={8}>
+                        <Text style={{ color: colors.textSecondary, fontSize: 12.5, fontFamily: fonts.medium }}>Back to 24H</Text>
+                      </Pressable>
+                    )}
+                  </View>
                 </View>
               ) : (
                 <View style={{ height: 300, justifyContent: "flex-end", gap: 6 }}>
