@@ -1,11 +1,53 @@
-import { useState } from "react";
-import { View, Text, Image } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, StyleSheet, View, Text, Image } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Screen, Header, Button, Chip, IconButton, Skeleton, colors, spacing, radius, fonts } from "../ui/kit";
 import CandlestickChart from "../ui/CandlestickChart";
 import { useCoinDetail, useCoinOHLC } from "../data/useCoinGecko";
 import { useApp, useToast } from "../state/store";
 import { formatPct } from "../lib/format";
+
+// Continuously-pulsing dot, same "this is actually live" signal a real
+// exchange app gives — the price below it really does refetch every 15s
+// (see useCoinDetail's LIVE_POLL_MS), this just makes that visible.
+function LiveBadge() {
+  const pulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 0.25, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+      <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.up, opacity: pulse }} />
+      <Text style={{ color: colors.textTertiary, fontSize: 11, fontFamily: fonts.medium, letterSpacing: 0.5 }}>LIVE</Text>
+    </View>
+  );
+}
+
+// Flashes the price's background on every real change from the poll — the
+// classic exchange-tape effect — so a refetch that lands the same number
+// twice in a row stays quiet, and an actual tick is visibly a tick.
+function useFlash(value) {
+  const flash = useRef(new Animated.Value(0)).current;
+  const prev = useRef(value);
+  const [flashUp, setFlashUp] = useState(true);
+  useEffect(() => {
+    if (value == null || prev.current == null) { prev.current = value; return; }
+    if (value !== prev.current) {
+      setFlashUp(value > prev.current);
+      prev.current = value;
+      flash.setValue(1);
+      Animated.timing(flash, { toValue: 0, duration: 700, useNativeDriver: false }).start();
+    }
+  }, [value]);
+  return { flash, flashUp };
+}
 
 /**
  * Ported from src/pages/CoinDetail.jsx (web), redone with a real candlestick
@@ -40,6 +82,8 @@ export default function CoinDetailScreen({ navigation, route }) {
   const price = coin?.market_data?.current_price?.usd;
   const changePct = coin?.market_data?.price_change_percentage_24h ?? 0;
   const up = changePct >= 0;
+  const { flash, flashUp } = useFlash(price);
+  const flashColor = flashUp ? colors.up : colors.down;
 
   return (
     <Screen footer={
@@ -83,7 +127,16 @@ export default function CoinDetailScreen({ navigation, route }) {
           <View style={{ padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.md }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: spacing.md }}>
               <View>
-                <Text style={{ color: up ? colors.up : colors.down, fontSize: 34, fontWeight: "700" }}>${price?.toLocaleString("en-US", { maximumFractionDigits: 2 })}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <View>
+                    <Animated.View
+                      pointerEvents="none"
+                      style={[StyleSheet.absoluteFillObject, { backgroundColor: flashColor, opacity: flash.interpolate({ inputRange: [0, 1], outputRange: [0, 0.18] }), borderRadius: radius.sm }]}
+                    />
+                    <Text style={{ color: up ? colors.up : colors.down, fontSize: 34, fontWeight: "700" }}>${price?.toLocaleString("en-US", { maximumFractionDigits: 2 })}</Text>
+                  </View>
+                  <LiveBadge />
+                </View>
                 <Text style={{ color: up ? colors.up : colors.down, fontSize: 14, marginTop: 4 }}>{up ? "▲" : "▼"} {formatPct(Math.abs(changePct))}</Text>
               </View>
               <View style={{ alignItems: "flex-end" }}>

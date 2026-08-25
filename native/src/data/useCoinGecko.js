@@ -26,10 +26,10 @@ async function getJSON(url) {
 // key -> { data, error, subscribers: Set<fn>, timer, inFlight }
 const cache = new Map();
 
-function subscribe(key, loader, onUpdate) {
+function subscribe(key, loader, onUpdate, intervalMs = POLL_MS) {
   let entry = cache.get(key);
   if (!entry) {
-    entry = { data: undefined, error: null, subscribers: new Set(), timer: null, inFlight: null };
+    entry = { data: undefined, error: null, subscribers: new Set(), timer: null, inFlight: null, intervalMs };
     cache.set(key, entry);
   }
   entry.subscribers.add(onUpdate);
@@ -52,7 +52,18 @@ function subscribe(key, loader, onUpdate) {
   };
 
   if (entry.data === undefined && !entry.inFlight) run();
-  if (!entry.timer) entry.timer = setInterval(run, POLL_MS);
+  // The screen actually looking at this data (e.g. the live chart) can ask
+  // for a faster cadence than the default background poll — the fastest
+  // request among current subscribers wins, and the timer is restarted at
+  // that rate.
+  if (!entry.timer) {
+    entry.intervalMs = intervalMs;
+    entry.timer = setInterval(run, entry.intervalMs);
+  } else if (intervalMs < entry.intervalMs) {
+    entry.intervalMs = intervalMs;
+    clearInterval(entry.timer);
+    entry.timer = setInterval(run, entry.intervalMs);
+  }
 
   // Deliberately never delete the cache entry itself, only stop its poll
   // timer once nobody's subscribed. React re-mounts components once in dev
@@ -71,9 +82,9 @@ function subscribe(key, loader, onUpdate) {
   };
 }
 
-function useShared(key, loader) {
+function useShared(key, loader, intervalMs) {
   const [, setTick] = useState(0);
-  useEffect(() => subscribe(key, loader, () => setTick((t) => t + 1)), [key]);
+  useEffect(() => subscribe(key, loader, () => setTick((t) => t + 1), intervalMs), [key, intervalMs]);
   const entry = cache.get(key);
   // Once a fetch has resolved — success or failure — this is no longer
   // "loading". Without the !error check, a request that keeps failing
@@ -92,11 +103,21 @@ export function useMarkets(ids, { vs = "usd", perPage = 100 } = {}) {
   return { data: data ?? [], loading, error };
 }
 
+// Faster than the default 60s background poll — this is the live price a
+// person is actively watching on the coin detail screen, so it ticks
+// closer to real time. Kept moderate (not e.g. 5-10s) because CoinGecko's
+// free tier rate-limits hard and this session hit it repeatedly during
+// testing — a tighter poll on the one screen that's actually open is worth
+// it, but pushing it further starts trading liveliness for more frequent
+// "couldn't load" errors, which is worse than a slightly slower tick.
+const LIVE_POLL_MS = 20_000;
+
 export function useCoinDetail(id) {
   const key = id ? `detail:${id}` : null;
   const { data, loading, error } = useShared(
     key ?? "detail:none",
-    () => getJSON(`${BASE}/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`)
+    () => getJSON(`${BASE}/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`),
+    LIVE_POLL_MS
   );
   if (!id) return { data: null, loading: false, error: null };
   return { data, loading, error };
@@ -140,7 +161,11 @@ export function useCoinChart(id, days = 7) {
 // Real candlestick data — CoinGecko's /ohlc endpoint, not the synthetic
 // close-price-only series useCoinChart uses. Granularity is fixed by their
 // API to the `days` value: 1 day returns 30-minute candles, 7-30 days
-// returns 4-hour candles, and anything longer returns 4-day candles.
+// returns 4-hour candles, and anything longer returns 4-day candles — so
+// polling this faster than the default 60s buys nothing visible (the
+// bucket a fresh candle would land in doesn't change on a 20s cadence);
+// the live-feeling part is the current price above the chart, not the
+// candles themselves.
 //
 // Built on the same shared/polling cache as the live price (useShared),
 // so the chart re-fetches every POLL_MS instead of loading once and going
