@@ -51,8 +51,8 @@ export default function UserProfileScreen({ navigation, route }) {
 
         {!isMe && (
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
-            <Button variant={following ? "secondary" : "primary"} onPress={() => { dispatch({ type: "social/toggleFollow", handle }); toast(following ? `Unfollowed @${handle}.` : `Following @${handle}.`); }}>{following ? "Following" : "Follow"}</Button>
-            <Button variant="secondary" onPress={canMessage ? openThread : () => toast("Only their followers can message them.")}>Message</Button>
+            <Button style={{ flex: 1 }} variant={following ? "secondary" : "primary"} onPress={() => { dispatch({ type: "social/toggleFollow", handle }); toast(following ? `Unfollowed @${handle}.` : `Following @${handle}.`); }}>{following ? "Following" : "Follow"}</Button>
+            <Button style={{ flex: 1 }} variant="secondary" onPress={canMessage ? openThread : () => toast("Only their followers can message them.")}>Message</Button>
           </View>
         )}
       </View>

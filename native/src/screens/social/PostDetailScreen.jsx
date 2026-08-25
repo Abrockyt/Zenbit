@@ -14,7 +14,7 @@ export default function PostDetailScreen({ navigation, route }) {
   const post = state.social.posts.find((p) => p.id === id);
 
   const sendReply = useAsyncAction(async () => {
-    dispatch({ type: "social/addReply", postId: id, reply: { id: `r${Date.now()}`, author: { handle: "you", name: state.session.user.name, initials: state.session.user.avatarInitials }, body: reply.trim(), createdAt: Date.now() } });
+    dispatch({ type: "social/addReply", postId: id, reply: { id: `r${Date.now()}`, author: { handle: "you", name: state.session.user.name, initials: state.session.user.avatarInitials, avatarUrl: state.session.user.avatarUrl }, body: reply.trim(), createdAt: Date.now() } });
   }, { label: "Sending reply", queueWhenOffline: true });
 
   const submit = async () => {
@@ -50,7 +50,7 @@ export default function PostDetailScreen({ navigation, route }) {
 
       {post.replies.map((r) => (
         <View key={r.id} style={{ flexDirection: "row", gap: 10, padding: 14, borderRadius: radius.md, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.sm }}>
-          <Avatar initials={r.author.initials} size={30} />
+          <Avatar uri={r.author.avatarUrl} initials={r.author.initials} size={30} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.textTertiary, fontSize: 12 }}>@{r.author.handle} · {relativeTime(r.createdAt)}</Text>
             <Text style={{ color: colors.textPrimary, fontSize: 13, marginTop: 2 }}>{r.body}</Text>

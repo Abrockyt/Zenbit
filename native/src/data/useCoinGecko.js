@@ -136,35 +136,20 @@ export function useCoinChart(id, days = 7) {
 // close-price-only series useCoinChart uses. Granularity is fixed by their
 // API to the `days` value: 1 day returns 30-minute candles, 7-30 days
 // returns 4-hour candles, and anything longer returns 4-day candles.
-const ohlcCache = new Map();
-
+//
+// Built on the same shared/polling cache as the live price (useShared),
+// so the chart re-fetches every POLL_MS instead of loading once and going
+// stale while the price above it keeps ticking.
 export function useCoinOHLC(id, days = 1) {
-  const [state, setState] = useState({ data: [], loading: true, error: null });
-
-  useEffect(() => {
-    if (!id) return;
-    const key = `ohlc:${id}:${days}`;
-    if (ohlcCache.has(key)) {
-      setState({ data: ohlcCache.get(key), loading: false, error: null });
-      return;
-    }
-    let cancelled = false;
-    setState({ data: [], loading: true, error: null });
-
-    getJSON(`${BASE}/coins/${id}/ohlc?vs_currency=usd&days=${days}`)
-      .then((json) => {
-        const candles = (json || []).map(([t, open, high, low, close]) => ({ t, open, high, low, close }));
-        ohlcCache.set(key, candles);
-        if (!cancelled) setState({ data: candles, loading: false, error: null });
-      })
-      .catch((err) => {
-        if (!cancelled) setState({ data: [], loading: false, error: err.message });
-      });
-
-    return () => { cancelled = true; };
-  }, [id, days]);
-
-  return state;
+  const key = id ? `ohlc:${id}:${days}` : null;
+  const { data, loading, error } = useShared(
+    key ?? "ohlc:none",
+    () => getJSON(`${BASE}/coins/${id}/ohlc?vs_currency=usd&days=${days}`).then(
+      (json) => (json || []).map(([t, open, high, low, close]) => ({ t, open, high, low, close }))
+    )
+  );
+  if (!id) return { data: [], loading: false, error: null };
+  return { data: data ?? [], loading, error };
 }
 
 export function useCoinSearch(query, delay = 350) {

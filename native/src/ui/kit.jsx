@@ -93,7 +93,7 @@ export function Header({ title, onBack, right }) {
   );
 }
 
-export function Button({ children, onPress, variant = "primary", disabled, loading }) {
+export function Button({ children, onPress, variant = "primary", disabled, loading, style }) {
   const { style: pressStyle, onPressIn, onPressOut } = usePressScale(0.97);
   const inner = (
     <Text
@@ -119,6 +119,7 @@ export function Button({ children, onPress, variant = "primary", disabled, loadi
         variant === "secondary" && styles.buttonSecondary,
         variant === "danger" && styles.buttonDanger,
         (disabled || loading) && styles.buttonDisabled,
+        style,
       ]}
     >
       {variant === "primary" ? (
@@ -441,7 +442,7 @@ const styles = StyleSheet.create({
   // Every primary/secondary action button in the Figma file is a full pill
   // (borderRadius = height/2), not a rounded rectangle — confirmed on
   // Welcome, Login and Signup's CTAs alike.
-  button: { borderRadius: radius.pill, height: 50, alignItems: "center", justifyContent: "center", overflow: "hidden", ...shadow.cta },
+  button: { borderRadius: radius.pill, height: 50, paddingHorizontal: spacing.xl, alignItems: "center", justifyContent: "center", overflow: "hidden", ...shadow.cta },
   buttonSecondary: { backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.borderDefault },
   buttonDanger: { backgroundColor: colors.downDim, borderWidth: 1, borderColor: colors.down },
   buttonDisabled: { opacity: 0.4 },

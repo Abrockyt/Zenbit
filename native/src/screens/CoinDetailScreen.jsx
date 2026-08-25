@@ -44,8 +44,8 @@ export default function CoinDetailScreen({ navigation, route }) {
   return (
     <Screen footer={
       <View style={{ flexDirection: "row", gap: spacing.md, padding: spacing.lg }}>
-        <Button onPress={() => navigation.navigate("Buy")}>Buy</Button>
-        <Button variant="danger" onPress={() => navigation.navigate("Sell")}>Sell</Button>
+        <Button style={{ flex: 1 }} onPress={() => navigation.navigate("Buy")}>Buy</Button>
+        <Button style={{ flex: 1 }} variant="danger" onPress={() => navigation.navigate("Sell")}>Sell</Button>
       </View>
     }>
       <Header

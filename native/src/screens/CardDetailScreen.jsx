@@ -43,8 +43,8 @@ export default function CardDetailScreen({ navigation }) {
       </View>
 
       <View style={{ flexDirection: "row", gap: spacing.md, marginBottom: spacing.lg }}>
-        <Button onPress={() => navigation.navigate("Buy")}>Top up</Button>
-        <Button variant="secondary" onPress={() => { dispatch({ type: card.frozen ? "card/unfreeze" : "card/freeze" }); toast(card.frozen ? "Card unfrozen." : "Card frozen. Payments will decline."); }}>
+        <Button style={{ flex: 1 }} onPress={() => navigation.navigate("Buy")}>Top up</Button>
+        <Button style={{ flex: 1 }} variant="secondary" onPress={() => { dispatch({ type: card.frozen ? "card/unfreeze" : "card/freeze" }); toast(card.frozen ? "Card unfrozen." : "Card frozen. Payments will decline."); }}>
           {card.frozen ? "Unfreeze" : "Freeze"}
         </Button>
       </View>
