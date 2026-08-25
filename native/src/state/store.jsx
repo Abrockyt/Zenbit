@@ -196,14 +196,22 @@ function reducer(state, action) {
           transactions: state.wallet.transactions.map((t) => (t.id === action.id ? { ...t, ...action.patch } : t)),
         },
       };
-    case "wallet/adjustUnits":
-      return {
-        ...state,
-        wallet: {
-          ...state.wallet,
-          holdings: state.wallet.holdings.map((h) => (h.id === action.id ? { ...h, units: Math.max(0, h.units + action.delta) } : h)),
-        },
-      };
+    case "wallet/adjustUnits": {
+      // A first-ever buy of a coin the wallet doesn't already hold a row
+      // for used to silently do nothing — .map() only touches an existing
+      // match, so the purchase would go through (receipt, transaction
+      // history) but never actually appear in the portfolio. Insert a new
+      // holding when there isn't one to add units to and the delta is
+      // positive (a buy); a negative delta with no existing holding has
+      // nothing to subtract from, so it stays a no-op.
+      const exists = state.wallet.holdings.some((h) => h.id === action.id);
+      const holdings = exists
+        ? state.wallet.holdings.map((h) => (h.id === action.id ? { ...h, units: Math.max(0, h.units + action.delta) } : h))
+        : action.delta > 0
+          ? [...state.wallet.holdings, { id: action.id, symbol: action.symbol ?? action.id, name: action.name ?? action.id, units: action.delta }]
+          : state.wallet.holdings;
+      return { ...state, wallet: { ...state.wallet, holdings } };
+    }
     case "wallet/addRecipient": {
       const next = [action.recipient, ...state.wallet.recentRecipients.filter((r) => r.address !== action.recipient.address)].slice(0, 6);
       return { ...state, wallet: { ...state.wallet, recentRecipients: next } };

@@ -66,7 +66,7 @@ export default function TradeFlowScreen({ navigation, route }) {
 
   const commit = useAsyncAction(async () => {
     if (buying && Math.round(fiat) === 666) throw new Error("Your card was declined by the issuer.");
-    dispatch({ type: "wallet/adjustUnits", id: coinId, delta: buying ? units : -units });
+    dispatch({ type: "wallet/adjustUnits", id: coinId, delta: buying ? units : -units, symbol: market.symbol, name: market.name });
     dispatch({
       type: "wallet/addTransaction",
       tx: { id: orderId, kind: buying ? "buy" : "sell", title: `${buying ? "Bought" : "Sold"} ${market.symbol.toUpperCase()}`, subtitle: buying ? (method?.label ?? "Card") : "To account balance", amount: fiat, negative: !buying, date: "Just now", status: "complete", units, symbol: market.symbol, fee },
@@ -147,7 +147,7 @@ export default function TradeFlowScreen({ navigation, route }) {
       <Screen
         footer={
           <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
-            <Button onPress={() => navigation.navigate("Home")}>View in portfolio</Button>
+            <Button onPress={() => navigation.navigate("Asset")}>View in portfolio</Button>
             <Button variant="secondary" onPress={() => { setStage("form"); setFiatAmount(""); setMethodId(null); commit.reset(); }}>{buying ? "Buy more" : "Sell more"}</Button>
           </View>
         }
