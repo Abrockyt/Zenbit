@@ -1,17 +1,19 @@
-import { FlatList, Text } from "react-native";
-import { Screen, Header, PriceRow, EmptyState, Button, colors } from "../ui/kit";
+import { View, FlatList } from "react-native";
+import { Screen, Header, PriceRow, EmptyState, Button, SkeletonList, colors, spacing } from "../ui/kit";
 import { useMarkets } from "../data/useCoinGecko";
 import { useApp } from "../state/store";
 
 export default function WatchlistScreen({ navigation }) {
   const { state } = useApp();
-  const { data: markets, loading } = useMarkets(state.watchlist);
+  const { data: markets, loading, error } = useMarkets(state.watchlist);
 
   return (
     <Screen scroll={false}>
       <Header title="Watchlist" onBack={() => navigation.goBack()} />
-      {loading ? (
-        <Text style={{ color: colors.textTertiary, fontSize: 13 }}>Loading…</Text>
+      {error && !markets?.length ? (
+        <EmptyState icon="wifi-off" title="Price feed unavailable" body="CoinGecko didn't respond. Pull to refresh or check your connection." />
+      ) : loading && !markets?.length ? (
+        <View style={{ marginTop: spacing.sm }}><SkeletonList count={6} /></View>
       ) : !markets?.length ? (
         <EmptyState icon="star" title="No coins pinned" body="Pin a coin on its detail page to track it here." />
       ) : (

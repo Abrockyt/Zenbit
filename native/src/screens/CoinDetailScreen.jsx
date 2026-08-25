@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, Image } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, Header, Button, Chip, IconButton, colors, spacing, radius, fonts } from "../ui/kit";
+import { Screen, Header, Button, Chip, IconButton, Skeleton, colors, spacing, radius, fonts } from "../ui/kit";
 import CandlestickChart from "../ui/CandlestickChart";
 import { useCoinDetail, useCoinOHLC } from "../data/useCoinGecko";
 import { useApp, useToast } from "../state/store";
@@ -62,7 +62,22 @@ export default function CoinDetailScreen({ navigation, route }) {
       {error ? (
         <Text style={{ color: colors.textTertiary, textAlign: "center", paddingVertical: 40 }}>Couldn't load this coin. Try again shortly.</Text>
       ) : loading || !coin ? (
-        <Text style={{ color: colors.textTertiary, textAlign: "center", paddingVertical: 40 }}>Loading…</Text>
+        <View style={{ padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.md }}>
+            <View style={{ gap: 8 }}>
+              <Skeleton width={140} height={30} />
+              <Skeleton width={80} height={14} />
+            </View>
+            <View style={{ gap: 8, alignItems: "flex-end" }}>
+              <Skeleton width={90} height={12} />
+              <Skeleton width={90} height={12} />
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", gap: 8, marginBottom: spacing.md }}>
+            {RANGES.map((r) => <Skeleton key={r.label} width={48} height={28} radius={radius.pill} />)}
+          </View>
+          <Skeleton width="100%" height={220} radius={radius.md} />
+        </View>
       ) : (
         <View>
           <View style={{ padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.md }}>

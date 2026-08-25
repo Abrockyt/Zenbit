@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, Header, Button, TextField, Row, Banner, EmptyState, colors, spacing, radius } from "../../ui/kit";
+import { Screen, Header, Button, TextField, Row, Banner, EmptyState, Skeleton, colors, spacing, radius } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";
 import { useMarkets } from "../../data/useCoinGecko";
@@ -65,7 +65,17 @@ export default function TradeFlowScreen({ navigation, route }) {
     if (!commit.isError && !commit.isQueued) setStage("done");
   };
 
-  if (loading && !markets) return <Screen><Header title={buying ? "Buy" : "Sell"} onBack={() => navigation.goBack()} /><Text style={{ color: colors.textTertiary }}>Loading…</Text></Screen>;
+  if (loading && !markets) {
+    return (
+      <Screen scroll={false}>
+        <Header title={buying ? "Buy" : "Sell"} onBack={() => navigation.goBack()} />
+        <View style={{ flexDirection: "row", gap: 8, marginBottom: spacing.md }}>
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} width={64} height={34} radius={999} />)}
+        </View>
+        <Skeleton width="100%" height={90} radius={radius.lg} />
+      </Screen>
+    );
+  }
   if (error) return <Screen><Header title={buying ? "Buy" : "Sell"} onBack={() => navigation.goBack()} /><Banner tone="danger">We can't price this trade right now, so it would be unsafe to quote you. Try again in a moment.</Banner></Screen>;
 
   if (buying && !method) {

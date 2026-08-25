@@ -75,7 +75,12 @@ function useShared(key, loader) {
   const [, setTick] = useState(0);
   useEffect(() => subscribe(key, loader, () => setTick((t) => t + 1)), [key]);
   const entry = cache.get(key);
-  return { data: entry?.data ?? null, loading: entry?.data === undefined, error: entry?.error ?? null };
+  // Once a fetch has resolved — success or failure — this is no longer
+  // "loading". Without the !error check, a request that keeps failing
+  // (rate limit, offline) leaves data permanently undefined, so `loading`
+  // never flips false and any UI keyed off it (skeletons) spins forever
+  // even while the error banner is already showing above it.
+  return { data: entry?.data ?? null, loading: entry?.data === undefined && !entry?.error, error: entry?.error ?? null };
 }
 
 export function useMarkets(ids, { vs = "usd", perPage = 100 } = {}) {

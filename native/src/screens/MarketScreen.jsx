@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, FlatList } from "react-native";
-import { Screen, TabBar, TextField, Chip, PriceRow, EmptyState, colors, spacing } from "../ui/kit";
+import { Screen, TabBar, TextField, Chip, PriceRow, EmptyState, SkeletonList, colors, spacing } from "../ui/kit";
 import { useMarkets, useCoinSearch } from "../data/useCoinGecko";
 import { useApp } from "../state/store";
 
@@ -35,7 +35,7 @@ export default function MarketScreen({ navigation }) {
         <EmptyState icon="wifi-off" title="Price feed unavailable" body="CoinGecko didn't respond. Pull to refresh or check your connection." />
       ) : showingSearch ? (
         searching ? (
-          <Text style={{ color: colors.textTertiary, fontSize: 13, marginTop: spacing.md }}>Searching…</Text>
+          <View style={{ marginTop: spacing.sm }}><SkeletonList count={5} /></View>
         ) : searchResults.length === 0 ? (
           <EmptyState icon="search" title="No results" body={`Nothing matches "${query}".`} />
         ) : (
@@ -47,7 +47,7 @@ export default function MarketScreen({ navigation }) {
           />
         )
       ) : loading ? (
-        <Text style={{ color: colors.textTertiary, fontSize: 13, marginTop: spacing.md }}>Loading…</Text>
+        <View style={{ marginTop: spacing.sm }}><SkeletonList count={8} /></View>
       ) : (
         <FlatList
           style={{ flex: 1 }}

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, TabBar, IconButton, SegmentedControl, Avatar, colors, spacing, radius, fonts } from "../ui/kit";
+import { Screen, TabBar, IconButton, SegmentedControl, Avatar, SkeletonList, EmptyState, colors, spacing, radius, fonts } from "../ui/kit";
 import { useApp } from "../state/store";
 import { useMarkets } from "../data/useCoinGecko";
 
@@ -127,9 +127,13 @@ export default function HomeScreen({ navigation }) {
 
       <SegmentedControl options={[{ value: "top", label: "Top Coin" }, { value: "watchlist", label: "Watchlist" }]} value={tab} onChange={setTab} />
 
-      {error && <Text style={{ color: colors.down, fontSize: 12, marginTop: spacing.sm }}>Couldn't refresh prices — showing last known values.</Text>}
-      {loading && !markets?.length && <Text style={{ color: colors.textTertiary, fontSize: 12, marginTop: spacing.sm }}>Loading live prices…</Text>}
+      {error && markets?.length > 0 && <Text style={{ color: colors.down, fontSize: 12, marginTop: spacing.sm }}>Couldn't refresh prices — showing last known values.</Text>}
 
+      {error && !markets?.length ? (
+        <EmptyState icon="wifi-off" title="Price feed unavailable" body="CoinGecko didn't respond. Pull to refresh or check your connection." />
+      ) : loading && !markets?.length ? (
+        <View style={{ marginTop: spacing.sm }}><SkeletonList count={6} /></View>
+      ) : (
       <FlatList
         style={{ flex: 1, marginTop: spacing.sm }}
         data={rows}
@@ -139,6 +143,7 @@ export default function HomeScreen({ navigation }) {
           return <CoinRow coin={c} holding={h ? `${h.units} ${h.symbol.toUpperCase()}` : undefined} onPress={() => navigation.navigate("CoinDetail", { id: c.id })} />;
         }}
       />
+      )}
     </Screen>
   );
 }

@@ -281,6 +281,48 @@ export function EmptyState({ icon = "inbox", title, body }) {
   );
 }
 
+// Pulsing placeholder, not a spinner — per the build contract, content
+// that's still loading shows a wireframe of its own shape rather than a
+// blocking spinner, so the screen doesn't visually jump when data arrives.
+export function Skeleton({ width = "100%", height = 14, radius: r = 6, style }) {
+  const pulse = useRef(new Animated.Value(0.35)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 0.9, duration: 650, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.35, duration: 650, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+  return <Animated.View style={[{ width, height, borderRadius: r, backgroundColor: colors.surfaceRaised, opacity: pulse }, style]} />;
+}
+
+export function SkeletonRow() {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, gap: 12 }}>
+      <Skeleton width={36} height={36} radius={18} />
+      <View style={{ flex: 1, gap: 6 }}>
+        <Skeleton width="55%" height={13} />
+        <Skeleton width="30%" height={11} />
+      </View>
+      <View style={{ alignItems: "flex-end", gap: 6 }}>
+        <Skeleton width={64} height={13} />
+        <Skeleton width={40} height={11} />
+      </View>
+    </View>
+  );
+}
+
+export function SkeletonList({ count = 6 }) {
+  return (
+    <View>
+      {Array.from({ length: count }).map((_, i) => <SkeletonRow key={i} />)}
+    </View>
+  );
+}
+
 export function Banner({ tone = "info", children }) {
   const toneColor = tone === "danger" ? colors.down : tone === "warn" ? colors.warn : colors.info;
   return (
