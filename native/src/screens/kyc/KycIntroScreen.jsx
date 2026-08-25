@@ -24,7 +24,14 @@ export default function KycIntroScreen({ navigation, route }) {
   if (inFlight) return null;
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
+          <Button onPress={() => navigation.navigate("KycDocuments", { next })}>Start verification</Button>
+          <Button variant="secondary" onPress={() => navigation.navigate(next)}>Not now</Button>
+        </View>
+      }
+    >
       <Header title="Verify your identity" onBack={() => navigation.navigate(next)} />
       <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: spacing.lg }}>
         Buying, selling and the Zenbit card need a verified identity. Holding, sending and swapping what you already own do not.
@@ -47,11 +54,6 @@ export default function KycIntroScreen({ navigation, route }) {
 
       <Banner>Your documents are encrypted in transit and never shown to other Zenbit users. This demo simulates verification — nothing is uploaded anywhere.</Banner>
 
-      <View style={{ flex: 1 }} />
-      <View style={{ gap: spacing.md }}>
-        <Button onPress={() => navigation.navigate("KycDocuments", { next })}>Start verification</Button>
-        <Button variant="secondary" onPress={() => navigation.navigate(next)}>Not now</Button>
-      </View>
     </Screen>
   );
 }

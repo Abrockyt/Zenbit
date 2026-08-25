@@ -80,7 +80,14 @@ export default function TradeFlowScreen({ navigation, route }) {
 
   if (stage === "done") {
     return (
-      <Screen>
+      <Screen
+        footer={
+          <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
+            <Button onPress={() => navigation.navigate("Home")}>Done</Button>
+            <Button variant="secondary" onPress={() => { setStage("form"); setFiatAmount(""); commit.reset(); }}>{buying ? "Buy more" : "Sell more"}</Button>
+          </View>
+        }
+      >
         <Header title={buying ? "Buy" : "Sell"} onBack={() => navigation.navigate("Home")} />
         <View style={{ alignItems: "center", gap: 14, paddingVertical: 40, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: "rgba(58,222,126,0.12)", borderWidth: 1, borderColor: colors.up, alignItems: "center", justifyContent: "center" }}>
@@ -89,11 +96,6 @@ export default function TradeFlowScreen({ navigation, route }) {
           <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "600" }}>{buying ? "Purchase complete" : "Sale complete"}</Text>
           <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700" }}>{formatCrypto(units, market.symbol.toUpperCase())}</Text>
           <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{buying ? `Charged ${formatMoney(total, cur)} to ${method?.label ?? "your card"}.` : `${formatMoney(total, cur)} added to your account balance.`}</Text>
-        </View>
-        <View style={{ flex: 1 }} />
-        <View style={{ gap: spacing.md }}>
-          <Button onPress={() => navigation.navigate("Home")}>Done</Button>
-          <Button variant="secondary" onPress={() => { setStage("form"); setFiatAmount(""); commit.reset(); }}>{buying ? "Buy more" : "Sell more"}</Button>
         </View>
       </Screen>
     );
@@ -109,7 +111,24 @@ export default function TradeFlowScreen({ navigation, route }) {
       [buying ? "Total charged" : "You receive", formatMoney(total, cur)],
     ];
     return (
-      <Screen>
+      <Screen
+        footer={
+          <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
+            {!commit.isError && !commit.isQueued && (
+              <>
+                {expired ? <Button onPress={() => setLock(LOCK_SECONDS)}>Refresh price</Button> : <Button loading={commit.isLoading} onPress={confirm}>{buying ? "Confirm buy" : "Confirm sell"}</Button>}
+                <Button variant="secondary" onPress={() => setStage("form")}>Back</Button>
+              </>
+            )}
+            {commit.isError && (
+              <>
+                <Button onPress={() => commit.reset()}>Try again</Button>
+                <Button variant="secondary" onPress={() => { commit.reset(); setStage("form"); }}>{buying ? "Use another card" : "Edit amount"}</Button>
+              </>
+            )}
+          </View>
+        }
+      >
         <Header title="Review order" onBack={() => setStage("form")} />
         <View style={{ padding: 20, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, gap: 14, marginBottom: spacing.md }}>
           {rows.map(([k, v], i) => (
@@ -128,26 +147,18 @@ export default function TradeFlowScreen({ navigation, route }) {
 
         {commit.isError && <Banner tone="danger">{buying ? "Card declined." : "Sale failed."} {commit.error?.message} Nothing was charged and your balance is unchanged.</Banner>}
         {commit.isQueued && <Banner tone="warn">You're offline. This order is queued and submits once — never twice — when you reconnect.</Banner>}
-
-        <View style={{ flex: 1 }} />
-        {!commit.isError && !commit.isQueued && (
-          <View style={{ gap: spacing.md }}>
-            {expired ? <Button onPress={() => setLock(LOCK_SECONDS)}>Refresh price</Button> : <Button loading={commit.isLoading} onPress={confirm}>{buying ? "Confirm buy" : "Confirm sell"}</Button>}
-            <Button variant="secondary" onPress={() => setStage("form")}>Back</Button>
-          </View>
-        )}
-        {commit.isError && (
-          <View style={{ gap: spacing.md, marginTop: spacing.md }}>
-            <Button onPress={() => commit.reset()}>Try again</Button>
-            <Button variant="secondary" onPress={() => { commit.reset(); setStage("form"); }}>{buying ? "Use another card" : "Edit amount"}</Button>
-          </View>
-        )}
       </Screen>
     );
   }
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
+          <Button disabled={!canReview} onPress={() => setStage("review")}>Review order</Button>
+        </View>
+      }
+    >
       <Header title={buying ? "Buy" : "Sell"} onBack={() => navigation.goBack()} />
 
       <Text style={{ color: colors.textTertiary, fontSize: 12, marginBottom: 6 }}>Coin</Text>
@@ -183,8 +194,6 @@ export default function TradeFlowScreen({ navigation, route }) {
 
       {buying && <Row icon="credit-card" title={method?.label ?? "Add a payment method"} subtitle="Payment method" onPress={() => navigation.navigate("PaymentMethods")} />}
 
-      <View style={{ flex: 1 }} />
-      <Button disabled={!canReview} onPress={() => setStage("review")}>Review order</Button>
     </Screen>
   );
 }

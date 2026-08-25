@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
+import { AntDesign } from "@expo/vector-icons";
 import { Screen, Header, Button, TextField, TextButton, Banner, colors, spacing, radius, fonts } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";
@@ -73,10 +74,12 @@ export default function LoginScreen({ navigation }) {
         </View>
 
         <View style={{ flexDirection: "row", gap: spacing.sm }}>
-          <Pressable onPress={socialSignIn} style={{ flex: 1, height: 50, borderRadius: radius.md, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
+          <Pressable onPress={socialSignIn} style={{ flex: 1, height: 50, flexDirection: "row", gap: 8, borderRadius: radius.md, backgroundColor: colors.white, alignItems: "center", justifyContent: "center" }}>
+            <AntDesign name="google" size={17} color="#000" />
             <Text style={{ color: "#000", fontSize: 15, fontFamily: fonts.medium }}>Google</Text>
           </Pressable>
-          <Pressable onPress={socialSignIn} style={{ flex: 1, height: 50, borderRadius: radius.md, backgroundColor: "#000", borderWidth: 1, borderColor: colors.borderDefault, alignItems: "center", justifyContent: "center" }}>
+          <Pressable onPress={socialSignIn} style={{ flex: 1, height: 50, flexDirection: "row", gap: 8, borderRadius: radius.md, backgroundColor: "#000", borderWidth: 1, borderColor: colors.borderDefault, alignItems: "center", justifyContent: "center" }}>
+            <AntDesign name="apple1" size={18} color={colors.white} />
             <Text style={{ color: colors.white, fontSize: 15, fontFamily: fonts.medium }}>Apple</Text>
           </Pressable>
         </View>

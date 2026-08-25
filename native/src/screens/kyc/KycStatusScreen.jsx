@@ -47,7 +47,22 @@ export default function KycStatusScreen({ navigation, route }) {
   }[status];
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
+          {status === "approved" && (
+            <Button onPress={() => { toast("Identity verified."); navigation.replace(next); }}>Continue</Button>
+          )}
+          {status === "rejected" && (
+            <>
+              <Button onPress={() => { dispatch({ type: "kyc/reset" }); navigation.replace("KycDocuments", { next }); }}>Retake and resubmit</Button>
+              <Button variant="secondary" onPress={() => toast("Support will email you within one business day.")}>Contact support</Button>
+            </>
+          )}
+          {status === "pending" && <Button variant="secondary" onPress={() => navigation.navigate(next)}>Leave and come back later</Button>}
+        </View>
+      }
+    >
       <Header title="Identity" onBack={() => navigation.navigate(next)} />
       <View style={{ alignItems: "center", gap: 14, paddingVertical: 40, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle }}>
         <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", backgroundColor: view.tint + "20", borderWidth: 1, borderColor: view.tint }}>
@@ -56,20 +71,6 @@ export default function KycStatusScreen({ navigation, route }) {
         <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "600" }}>{view.title}</Text>
         <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: "center", maxWidth: 280 }}>{view.body}</Text>
         {status === "pending" && <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{elapsed}s elapsed</Text>}
-      </View>
-
-      <View style={{ flex: 1 }} />
-      <View style={{ gap: spacing.md }}>
-        {status === "approved" && (
-          <Button onPress={() => { toast("Identity verified."); navigation.replace(next); }}>Continue</Button>
-        )}
-        {status === "rejected" && (
-          <>
-            <Button onPress={() => { dispatch({ type: "kyc/reset" }); navigation.replace("KycDocuments", { next }); }}>Retake and resubmit</Button>
-            <Button variant="secondary" onPress={() => toast("Support will email you within one business day.")}>Contact support</Button>
-          </>
-        )}
-        {status === "pending" && <Button variant="secondary" onPress={() => navigation.navigate(next)}>Leave and come back later</Button>}
       </View>
     </Screen>
   );

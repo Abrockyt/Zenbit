@@ -48,7 +48,19 @@ export default function TransactionDetailScreen({ navigation, route }) {
   ].filter(Boolean);
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
+          {pending && (
+            <>
+              <Button loading={speedUp.isLoading} onPress={() => speedUp.run().then(() => toast("Fee bumped — this should confirm shortly."))}>Speed up</Button>
+              <Button variant="secondary" loading={cancel.isLoading} onPress={() => cancel.run().then(() => toast("Transaction cancelled. Funds returned."))}>Cancel transaction</Button>
+            </>
+          )}
+          <Button variant="secondary" onPress={() => navigation.navigate("RecentActivity")}>Back to activity</Button>
+        </View>
+      }
+    >
       <Header title={KIND_LABEL[tx.kind] ?? "Transaction"} onBack={() => navigation.goBack()} />
 
       <View style={{ alignItems: "center", gap: 8, paddingVertical: 28, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.md }}>
@@ -77,16 +89,6 @@ export default function TransactionDetailScreen({ navigation, route }) {
         </View>
       )}
 
-      <View style={{ flex: 1 }} />
-      <View style={{ gap: spacing.md }}>
-        {pending && (
-          <>
-            <Button loading={speedUp.isLoading} onPress={() => speedUp.run().then(() => toast("Fee bumped — this should confirm shortly."))}>Speed up</Button>
-            <Button variant="secondary" loading={cancel.isLoading} onPress={() => cancel.run().then(() => toast("Transaction cancelled. Funds returned."))}>Cancel transaction</Button>
-          </>
-        )}
-        <Button variant="secondary" onPress={() => navigation.navigate("RecentActivity")}>Back to activity</Button>
-      </View>
     </Screen>
   );
 }

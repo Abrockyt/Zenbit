@@ -15,7 +15,18 @@ export default function TermsScreen({ navigation }) {
   const [accepted, setAccepted] = useState(false);
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
+          <Button
+            disabled={!accepted}
+            onPress={() => { dispatch({ type: "onboarding/set", patch: { termsAccepted: true } }); navigation.navigate("CreateWallet"); }}
+          >
+            Create my wallet
+          </Button>
+        </View>
+      }
+    >
       <Header title="Before you start" onBack={() => navigation.goBack()} />
       <Text style={{ color: colors.textSecondary, fontSize: 13, marginBottom: spacing.lg }}>
         Three things worth understanding before your wallet is created.
@@ -47,13 +58,6 @@ export default function TermsScreen({ navigation }) {
         </Text>
       </Pressable>
 
-      <View style={{ flex: 1 }} />
-      <Button
-        disabled={!accepted}
-        onPress={() => { dispatch({ type: "onboarding/set", patch: { termsAccepted: true } }); navigation.navigate("CreateWallet"); }}
-      >
-        Create my wallet
-      </Button>
     </Screen>
   );
 }

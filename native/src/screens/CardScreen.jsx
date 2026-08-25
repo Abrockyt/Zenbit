@@ -1,6 +1,7 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Image } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, TabBar, IconButton, SectionHeader, Row, Button, Banner, colors, spacing, radius } from "../ui/kit";
+import { LinearGradient } from "expo-linear-gradient";
+import { Screen, TabBar, IconButton, SectionHeader, Row, Button, Banner, colors, spacing, radius, gradients, fonts } from "../ui/kit";
 import { account } from "../data/mockWallet";
 import { useApp, useToast } from "../state/store";
 import { formatMoney } from "../lib/format";
@@ -62,10 +63,20 @@ export default function CardScreen({ navigation }) {
           <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Card balance</Text>
           <Text style={{ color: colors.textPrimary, fontSize: 28, fontWeight: "700", marginTop: 4, marginBottom: spacing.md }}>{formatMoney(card.balance, "usd")}</Text>
 
-          <View style={{ padding: 20, borderRadius: radius.lg, backgroundColor: colors.green800, opacity: card.frozen ? 0.5 : 1, marginBottom: spacing.md }}>
-            <Text style={{ color: colors.textPrimary, fontSize: 12, letterSpacing: 1 }}>ZENBIT PRO</Text>
-            <Text style={{ color: colors.textPrimary, fontSize: 16, letterSpacing: 1, marginTop: 24 }}>•••• •••• •••• {card.last4}</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 8 }}>{account.name} · {card.expMonth}/{card.expYear}</Text>
+          <View style={{ borderRadius: radius.xl, overflow: "hidden", opacity: card.frozen ? 0.55 : 1, marginBottom: spacing.md, borderWidth: 1, borderColor: colors.borderDefault }}>
+            <LinearGradient colors={gradients.bankCard} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ aspectRatio: 1.586, padding: 20, justifyContent: "space-between" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Image source={require("../../assets/icon.png")} style={{ width: 26, height: 26, borderRadius: 7 }} />
+                <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, letterSpacing: 1, fontFamily: fonts.medium }}>ZENBIT PRO</Text>
+              </View>
+              <View>
+                <Text style={{ color: "#fff", fontSize: 17, letterSpacing: 2, fontFamily: fonts.mono }}>•••• •••• •••• {card.last4}</Text>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 12 }}>
+                  <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 12 }}>{account.name}</Text>
+                  <Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 12 }}>{card.expMonth}/{card.expYear}</Text>
+                </View>
+              </View>
+            </LinearGradient>
           </View>
 
           <View style={{ flexDirection: "row", marginBottom: spacing.md }}>

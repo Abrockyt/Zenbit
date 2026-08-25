@@ -79,7 +79,14 @@ export default function SendScreen({ navigation, route }) {
 
   if (stage === "done") {
     return (
-      <Screen>
+      <Screen
+        footer={
+          <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
+            <Button onPress={() => navigation.navigate("RecentActivity")}>View activity</Button>
+            <Button variant="secondary" onPress={() => navigation.navigate("Home")}>Back to home</Button>
+          </View>
+        }
+      >
         <Header title="Send" onBack={() => navigation.navigate("Home")} />
         <View style={{ alignItems: "center", gap: 14, paddingVertical: 40, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: "rgba(58,222,126,0.12)", borderWidth: 1, borderColor: colors.up, alignItems: "center", justifyContent: "center" }}>
@@ -88,11 +95,6 @@ export default function SendScreen({ navigation, route }) {
           <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "600" }}>Sent</Text>
           <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700" }}>{formatCrypto(units, asset.symbol.toUpperCase())}</Text>
           <Text style={{ color: colors.textSecondary, fontSize: 13 }}>To {address.slice(0, 10)}…{address.slice(-6)} · confirming on-chain now.</Text>
-        </View>
-        <View style={{ flex: 1 }} />
-        <View style={{ gap: spacing.md }}>
-          <Button onPress={() => navigation.navigate("RecentActivity")}>View activity</Button>
-          <Button variant="secondary" onPress={() => navigation.navigate("Home")}>Back to home</Button>
         </View>
       </Screen>
     );
@@ -107,7 +109,24 @@ export default function SendScreen({ navigation, route }) {
       ["Total debited", formatCrypto(units + networkFee, asset.symbol.toUpperCase())],
     ];
     return (
-      <Screen>
+      <Screen
+        footer={
+          <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
+            {!send.isError && !send.isQueued && (
+              <>
+                <Button loading={send.isLoading} onPress={confirm}>Confirm and send</Button>
+                <Button variant="secondary" onPress={() => setStage("form")}>Back</Button>
+              </>
+            )}
+            {send.isError && (
+              <>
+                <Button onPress={() => send.reset()}>Try again</Button>
+                <Button variant="secondary" onPress={() => { send.reset(); setStage("form"); }}>Edit details</Button>
+              </>
+            )}
+          </View>
+        }
+      >
         <Header title="Review" onBack={() => setStage("form")} />
         <View style={{ padding: 20, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, gap: 14, marginBottom: spacing.md }}>
           {rows.map(([k, v]) => (
@@ -122,26 +141,18 @@ export default function SendScreen({ navigation, route }) {
 
         {send.isError && <View style={{ marginTop: spacing.md }}><Banner tone="danger">Transaction failed. {send.error?.message} Your balance is unchanged.</Banner></View>}
         {send.isQueued && <View style={{ marginTop: spacing.md }}><Banner tone="warn">You're offline. This send is queued and goes out once you reconnect — it won't be sent twice.</Banner></View>}
-
-        <View style={{ flex: 1 }} />
-        {!send.isError && !send.isQueued && (
-          <View style={{ gap: spacing.md }}>
-            <Button loading={send.isLoading} onPress={confirm}>Confirm and send</Button>
-            <Button variant="secondary" onPress={() => setStage("form")}>Back</Button>
-          </View>
-        )}
-        {send.isError && (
-          <View style={{ gap: spacing.md }}>
-            <Button onPress={() => send.reset()}>Try again</Button>
-            <Button variant="secondary" onPress={() => { send.reset(); setStage("form"); }}>Edit details</Button>
-          </View>
-        )}
       </Screen>
     );
   }
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
+          <Button disabled={!canReview} onPress={() => setStage("review")}>Review send</Button>
+        </View>
+      }
+    >
       <Header title="Send" onBack={() => navigation.goBack()} />
 
       <Text style={{ color: colors.textTertiary, fontSize: 12, marginBottom: 6 }}>Asset</Text>
@@ -194,8 +205,6 @@ export default function SendScreen({ navigation, route }) {
         {overBalance ? `Insufficient funds. You have ${formatCrypto(available, asset.symbol.toUpperCase())}, and the network fee is ${networkFee} ${asset.symbol.toUpperCase()}.` : `Available ${formatCrypto(available, asset.symbol.toUpperCase())}`}
       </Text>
 
-      <View style={{ flex: 1 }} />
-      <Button disabled={!canReview} onPress={() => setStage("review")}>Review send</Button>
     </Screen>
   );
 }

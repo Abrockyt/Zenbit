@@ -8,7 +8,14 @@ const SAMPLE = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
 
 export default function ScanQrScreen({ navigation }) {
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
+          <Button onPress={() => navigation.navigate("Send", { address: SAMPLE })}>Simulate a scan</Button>
+          <Button variant="secondary" onPress={() => navigation.navigate("Send")}>Enter the address instead</Button>
+        </View>
+      }
+    >
       <Header title="Scan to send" onBack={() => navigation.goBack()} />
       <Text style={{ color: colors.textTertiary, fontSize: 12, textAlign: "center", marginBottom: spacing.md }}>Simulated — no camera is used</Text>
 
@@ -20,11 +27,6 @@ export default function ScanQrScreen({ navigation }) {
         Point at a wallet QR code. Zenbit reads the address and the amount if the code includes one.
       </Text>
 
-      <View style={{ flex: 1 }} />
-      <View style={{ gap: spacing.md }}>
-        <Button onPress={() => navigation.navigate("Send", { address: SAMPLE })}>Simulate a scan</Button>
-        <Button variant="secondary" onPress={() => navigation.navigate("Send")}>Enter the address instead</Button>
-      </View>
     </Screen>
   );
 }

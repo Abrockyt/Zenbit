@@ -16,7 +16,7 @@ export default function FaceIdScreen({ navigation }) {
   }
 
   return (
-    <Screen>
+    <Screen scroll={false}>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 16 }}>
         <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: "rgba(58,222,126,0.08)", borderWidth: 1, borderColor: colors.borderStrong, alignItems: "center", justifyContent: "center" }}>
           <Feather name="smile" size={40} color={colors.up} />

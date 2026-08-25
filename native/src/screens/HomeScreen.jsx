@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, TabBar, IconButton, SegmentedControl, colors, spacing, radius, fonts } from "../ui/kit";
+import { Screen, TabBar, IconButton, SegmentedControl, Avatar, colors, spacing, radius, fonts } from "../ui/kit";
 import { useApp } from "../state/store";
 import { useMarkets } from "../data/useCoinGecko";
 
@@ -71,13 +71,18 @@ export default function HomeScreen({ navigation }) {
   const totalChange = priced.reduce((s, h) => s + ((h.market?.current_price ?? 0) * h.units * (h.market?.price_change_percentage_24h ?? 0)) / 100, 0);
   const totalChangePct = total ? (totalChange / (total - totalChange)) * 100 : 0;
 
-  const rows = tab === "watchlist" ? (markets ?? []).filter((m) => state.watchlist.includes(m.id)) : (markets ?? []).filter((m) => holdings.some((h) => h.id === m.id));
+  // "Top Coin" is the top-market-cap list (already the order useMarkets'
+  // default query returns), not "coins you hold" — a brand new account has
+  // zero holdings, so filtering this tab down to held coins left it looking
+  // empty/broken for every new signup even though live prices were fetching
+  // fine. Watchlist stays personal since that's what it's for.
+  const rows = tab === "watchlist" ? (markets ?? []).filter((m) => state.watchlist.includes(m.id)) : (markets ?? []);
 
   return (
     <Screen scroll={false}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surfaceRaised, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 6, paddingRight: 14 }}>
-          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surfaceCard }} />
+          <Avatar uri={user?.avatarUrl} initials={user?.avatarInitials} size={28} />
           <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: fonts.medium }}>{user?.name ? user.name.split(" ")[0].toLowerCase() : "user"}crypto</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>

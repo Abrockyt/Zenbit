@@ -12,7 +12,18 @@ export default function CreateWalletScreen({ navigation }) {
   const [revealed, setRevealed] = useState(false);
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
+          <Button
+            disabled={!revealed}
+            onPress={() => { dispatch({ type: "onboarding/set", patch: { phraseBackedUp: true } }); navigation.navigate("FaceId"); }}
+          >
+            I've saved it
+          </Button>
+        </View>
+      }
+    >
       <Header title="" onBack={() => navigation.goBack()} />
       <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600" }}>Your recovery phrase</Text>
       <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 8, marginBottom: spacing.lg }}>
@@ -43,13 +54,6 @@ export default function CreateWalletScreen({ navigation }) {
         <Banner tone="warn">Zenbit Pro can't recover this phrase for you. Losing it means losing access to your funds.</Banner>
       </View>
 
-      <View style={{ flex: 1 }} />
-      <Button
-        disabled={!revealed}
-        onPress={() => { dispatch({ type: "onboarding/set", patch: { phraseBackedUp: true } }); navigation.navigate("FaceId"); }}
-      >
-        I've saved it
-      </Button>
     </Screen>
   );
 }

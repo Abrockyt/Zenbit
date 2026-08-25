@@ -45,7 +45,13 @@ export default function VerifyEmailScreen({ navigation }) {
   }
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
+          <Button onPress={submit} disabled={code.length !== 6}>Continue</Button>
+        </View>
+      }
+    >
       <Header title="" onBack={() => navigation.goBack()} />
       <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600" }}>Enter your code</Text>
       <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 8, marginBottom: spacing.lg }}>
@@ -72,8 +78,6 @@ export default function VerifyEmailScreen({ navigation }) {
         <TextButton onPress={resend}>{cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}</TextButton>
       </View>
 
-      <View style={{ flex: 1 }} />
-      <Button onPress={submit} disabled={code.length !== 6}>Continue</Button>
     </Screen>
   );
 }

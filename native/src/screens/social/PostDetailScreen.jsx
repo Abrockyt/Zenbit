@@ -33,7 +33,16 @@ export default function PostDetailScreen({ navigation, route }) {
   }
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ flexDirection: "row", gap: 8, alignItems: "center", paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
+          <View style={{ flex: 1 }}>
+            <TextField value={reply} onChangeText={setReply} placeholder="Write a reply" />
+          </View>
+          <IconButton icon="send" onPress={submit} />
+        </View>
+      }
+    >
       <Header title="Post" onBack={() => navigation.goBack()} right={<IconButton icon="flag" size={16} onPress={() => { dispatch({ type: "social/report", report: { id: `rep${Date.now()}`, target: post.author.handle, kind: "post", reason: "Reported from post", detail: "", at: Date.now(), status: "received" } }); toast("Reported. Thanks — we'll take a look."); }} />} />
 
       <View style={{ flexDirection: "row", gap: 10, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.md }}>
@@ -61,13 +70,6 @@ export default function PostDetailScreen({ navigation, route }) {
       {sendReply.isError && <Banner tone="danger">Reply failed to send. {sendReply.error?.message}</Banner>}
       {sendReply.isQueued && <Text style={{ color: colors.warn, fontSize: 12 }}>Offline — your reply is queued and sends on reconnect.</Text>}
 
-      <View style={{ flex: 1 }} />
-      <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-        <View style={{ flex: 1 }}>
-          <TextField value={reply} onChangeText={setReply} placeholder="Write a reply" />
-        </View>
-        <IconButton icon="send" onPress={submit} />
-      </View>
     </Screen>
   );
 }

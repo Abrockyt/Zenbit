@@ -38,7 +38,7 @@ export default function KycDocumentsScreen({ navigation, route }) {
   };
 
   return (
-    <Screen>
+    <Screen scroll={false}>
       <Header title={`Identity check · Step ${step} of 3`} onBack={() => navigation.goBack()} />
 
       {step === 1 && (

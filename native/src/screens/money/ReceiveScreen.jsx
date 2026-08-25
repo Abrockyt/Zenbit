@@ -36,7 +36,14 @@ export default function ReceiveScreen({ navigation }) {
   const share = async () => { try { await Share.share({ message: address }); } catch {} };
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
+          <Button onPress={copy}>Copy address</Button>
+          <Button variant="secondary" onPress={share}>Share</Button>
+        </View>
+      }
+    >
       <Header title="Receive" onBack={() => navigation.goBack()} />
       <SegmentedControl options={NETWORKS.map((n) => ({ value: n.value, label: n.label }))} value={network} onChange={setNetwork} />
 
@@ -51,11 +58,6 @@ export default function ReceiveScreen({ navigation }) {
 
       <Banner tone="warn">Only send {net.symbol} and {net.label} tokens to this address. Anything on another network will be lost.</Banner>
 
-      <View style={{ flex: 1 }} />
-      <View style={{ gap: spacing.md }}>
-        <Button onPress={copy}>Copy address</Button>
-        <Button variant="secondary" onPress={share}>Share</Button>
-      </View>
     </Screen>
   );
 }

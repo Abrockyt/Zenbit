@@ -29,7 +29,13 @@ export default function ComposeScreen({ navigation }) {
   const toggleTag = (t) => setSelectedTags((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
+          <Button disabled={!draft.trim() || left < 0} loading={publish.isLoading} onPress={send}>Post</Button>
+        </View>
+      }
+    >
       <Header title="New post" onBack={() => navigation.goBack()} right={<Text style={{ color: draft.trim() && left >= 0 ? colors.up : colors.textDisabled, fontWeight: "600" }} onPress={send}>Post</Text>} />
 
       <TextField value={draft} onChangeText={(v) => dispatch({ type: "social/setDraft", draft: v })} placeholder="What are you watching?" multiline />
@@ -42,8 +48,6 @@ export default function ComposeScreen({ navigation }) {
       {publish.isError && <View style={{ marginTop: spacing.md }}><Banner tone="danger">Post failed to send. {publish.error?.message} Your draft is saved — retry, or come back to it later.</Banner></View>}
       {publish.isQueued && <View style={{ marginTop: spacing.md }}><Banner tone="warn">You're offline. This post is queued and publishes once you reconnect.</Banner></View>}
 
-      <View style={{ flex: 1 }} />
-      <Button disabled={!draft.trim() || left < 0} loading={publish.isLoading} onPress={send}>Post</Button>
     </Screen>
   );
 }

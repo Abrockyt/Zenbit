@@ -43,7 +43,13 @@ export default function RestoreWalletScreen({ navigation }) {
   };
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
+          <Button onPress={go} loading={restore.isLoading} disabled={filled === 0}>Restore wallet</Button>
+        </View>
+      }
+    >
       <Header title="Restore wallet" onBack={() => navigation.goBack()} />
       <Text style={{ color: colors.textSecondary, fontSize: 13, marginBottom: spacing.md }}>
         Enter your recovery phrase in order. Zenbit never stores your phrase.
@@ -84,8 +90,6 @@ export default function RestoreWalletScreen({ navigation }) {
         <Banner>Zenbit never stores your recovery phrase and can't recover it for you.</Banner>
       </View>
 
-      <View style={{ flex: 1 }} />
-      <Button onPress={go} loading={restore.isLoading} disabled={filled === 0}>Restore wallet</Button>
     </Screen>
   );
 }

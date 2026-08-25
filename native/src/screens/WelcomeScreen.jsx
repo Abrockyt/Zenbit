@@ -24,7 +24,29 @@ const SLIDES = [
   { title: "One tap to send or spend", body: "Move funds instantly, or spend straight from your wallet with the card." },
 ];
 const { width: SCREEN_W } = Dimensions.get("window");
-const AUTO_ADVANCE_MS = 4500;
+const AUTO_ADVANCE_MS = 2800;
+
+// Story-style progress dot (Instagram/Snapchat pattern): every slide gets a
+// fixed-width track, the active one fills left-to-right over the slide's
+// dwell time, and past slides stay fully filled instead of just "on/off".
+function StoryDot({ active, done }) {
+  const fill = useRef(new Animated.Value(done ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (active) {
+      fill.setValue(0);
+      Animated.timing(fill, { toValue: 1, duration: AUTO_ADVANCE_MS, useNativeDriver: false }).start();
+    } else {
+      fill.setValue(done ? 1 : 0);
+    }
+  }, [active, done]);
+
+  return (
+    <View style={styles.dotTrack}>
+      <Animated.View style={[styles.dotFill, { width: fill.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) }]} />
+    </View>
+  );
+}
 
 export default function WelcomeScreen({ navigation }) {
   const scrollRef = useRef(null);
@@ -78,7 +100,7 @@ export default function WelcomeScreen({ navigation }) {
 
           <View style={styles.dots}>
             {SLIDES.map((s, i) => (
-              <View key={s.title} style={[styles.dot, i === index && styles.dotActive]} />
+              <StoryDot key={s.title} active={i === index} done={i < index} />
             ))}
           </View>
 
@@ -105,8 +127,8 @@ const styles = StyleSheet.create({
   title: { color: colors.textPrimary, fontSize: 26, fontFamily: fonts.medium, marginTop: 8, letterSpacing: -0.4 },
   body: { color: colors.textSecondary, fontSize: 14, marginTop: 8, lineHeight: 21 },
   dots: { flexDirection: "row", gap: 6, marginVertical: 20 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.28)" },
-  dotActive: { width: 22, backgroundColor: colors.white },
+  dotTrack: { width: 26, height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.22)", overflow: "hidden" },
+  dotFill: { height: "100%", borderRadius: 2, backgroundColor: colors.white },
   primaryButton: { backgroundColor: colors.white, borderRadius: 27, height: 54, alignItems: "center", justifyContent: "center", marginBottom: 12 },
   primaryButtonText: { color: "#050807", fontSize: 15, fontFamily: fonts.medium },
   secondaryButton: { paddingVertical: 10, alignItems: "center" },
