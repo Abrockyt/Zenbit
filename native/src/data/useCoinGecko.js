@@ -182,6 +182,41 @@ export function useCoinOHLC(id, days = 1) {
   return { data: data ?? [], loading, error };
 }
 
+// Real per-interval volume. CoinGecko's /ohlc endpoint returns no volume at
+// all, so the volume bars under the chart come from /market_chart's
+// total_volumes series instead — same coin, same window, real numbers.
+// Returned alongside its timestamps so the chart can align volume bars to
+// candles by time rather than assuming both series have the same length
+// (they don't — the two endpoints bucket differently).
+export function useCoinVolume(id, days = 1) {
+  const key = id ? `vol:${id}:${days}` : null;
+  const { data, loading, error } = useShared(
+    key ?? "vol:none",
+    () => getJSON(`${BASE}/coins/${id}/market_chart?vs_currency=usd&days=${days}`).then(
+      (json) => (json.total_volumes || []).map(([t, v]) => ({ t, v }))
+    )
+  );
+  if (!id) return { data: [], loading: false, error: null };
+  return { data: data ?? [], loading, error };
+}
+
+// Real exchange markets for this coin — per-exchange last price, spread and
+// volume. This is what backs the markets/depth section: CoinGecko's free
+// tier has no live order-book endpoint, so rather than inventing bids and
+// asks, the section shows the real venues trading this pair and their real
+// quoted prices and spreads.
+export function useCoinTickers(id) {
+  const key = id ? `tickers:${id}` : null;
+  const { data, loading, error } = useShared(
+    key ?? "tickers:none",
+    () => getJSON(`${BASE}/coins/${id}/tickers?include_exchange_logo=true&depth=true`).then(
+      (json) => (json.tickers || []).slice(0, 25)
+    )
+  );
+  if (!id) return { data: [], loading: false, error: null };
+  return { data: data ?? [], loading, error };
+}
+
 export function useCoinSearch(query, delay = 350) {
   const [state, setState] = useState({ data: [], loading: false, error: null });
 
