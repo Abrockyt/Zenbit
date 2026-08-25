@@ -92,7 +92,7 @@ const seedPosts = [
 const seedThreads = [
   {
     id: "th1",
-    with: { handle: "mara.eth", name: "Mara Osei", initials: "MO" },
+    with: { handle: "mara.eth", name: "Mara Osei", initials: "MO", avatarUrl: "https://i.pravatar.cc/150?u=mara" },
     messages: [
       { id: "m1", from: "them", body: "did you get filled on that swap?", at: Date.now() - 1000 * 60 * 90 },
       { id: "m2", from: "me", body: "yeah, slippage was rough though", at: Date.now() - 1000 * 60 * 88 },
@@ -100,7 +100,7 @@ const seedThreads = [
   },
   {
     id: "th2",
-    with: { handle: "leo.base", name: "Leo Marchetti", initials: "LM" },
+    with: { handle: "leo.base", name: "Leo Marchetti", initials: "LM", avatarUrl: "https://i.pravatar.cc/150?u=leo" },
     messages: [{ id: "m3", from: "them", body: "sending you the recovery checklist", at: Date.now() - 1000 * 60 * 60 * 26 }],
   },
 ];

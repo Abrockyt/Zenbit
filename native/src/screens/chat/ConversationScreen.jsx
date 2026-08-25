@@ -50,7 +50,7 @@ export default function ConversationScreen({ navigation, route }) {
 
   return (
     <Screen scroll={false}>
-      <Header title={thread.with.name} onBack={() => navigation.goBack()} right={<Avatar initials={thread.with.initials} size={30} />} />
+      <Header title={thread.with.name} onBack={() => navigation.goBack()} right={<Avatar uri={thread.with.avatarUrl} initials={thread.with.initials} size={30} />} />
 
       <View style={{ flex: 1, justifyContent: "flex-end", gap: 8, paddingHorizontal: spacing.xl }}>
         {thread.messages.length === 0 && queuedHere.length === 0 && <EmptyState icon="message-circle" title="No messages yet" body={`Say something to ${thread.with.name.split(" ")[0]}.`} />}

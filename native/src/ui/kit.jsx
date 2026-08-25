@@ -19,8 +19,7 @@ import RadialBackground from "./RadialBackground";
  * silent blank screen). Animated ships inside react-native core itself, so
  * there's no separate native module to mismatch — it can't hit this class
  * of bug. Every animation this kit does (press-scale, sheet slide-up, result
- * fade-in, the tab bar's sliding indicator) is well within what Animated
- * handles natively.
+ * fade-in) is well within what Animated handles natively.
  *
  * Also ports the web app's actual look through the shared components, so
  * every screen picks it up at once: glass cards (BlurView, matching
@@ -84,7 +83,11 @@ export function Header({ title, onBack, right }) {
       ) : (
         <View style={styles.headerBtn} />
       )}
-      {title ? <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text> : <View style={{ flex: 1 }} />}
+      {title ? (
+        typeof title === "string"
+          ? <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
+          : <View style={{ flex: 1 }}>{title}</View>
+      ) : <View style={{ flex: 1 }} />}
       <View style={styles.headerBtn}>{right}</View>
     </View>
   );
@@ -208,19 +211,36 @@ export function Switch({ value, onValueChange }) {
   );
 }
 
-export function TextField({ value, onChangeText, placeholder, keyboardType, secureTextEntry, autoFocus, multiline }) {
+export function TextField({ value, onChangeText, placeholder, keyboardType, secureTextEntry, autoFocus, multiline, icon }) {
+  if (!icon) {
+    return (
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textTertiary}
+        keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
+        autoFocus={autoFocus}
+        multiline={multiline}
+        style={[styles.input, multiline && { minHeight: 90, textAlignVertical: "top" }]}
+      />
+    );
+  }
   return (
-    <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      placeholderTextColor={colors.textTertiary}
-      keyboardType={keyboardType}
-      secureTextEntry={secureTextEntry}
-      autoFocus={autoFocus}
-      multiline={multiline}
-      style={[styles.input, multiline && { minHeight: 90, textAlignVertical: "top" }]}
-    />
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <Feather name={icon} size={16} color={colors.textTertiary} style={{ position: "absolute", left: 16, zIndex: 1 }} />
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textTertiary}
+        keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
+        autoFocus={autoFocus}
+        style={[styles.input, { paddingLeft: 42, flex: 1 }]}
+      />
+    </View>
   );
 }
 
@@ -318,33 +338,20 @@ const TABS = [
   { key: "Profile", icon: "user" },
 ];
 export function TabBar({ navigation, active }) {
-  const index = Math.max(0, TABS.findIndex((t) => t.key === active));
-  const x = useRef(new Animated.Value(index)).current;
-
-  useEffect(() => {
-    Animated.spring(x, { toValue: index, friction: 8, tension: 220, useNativeDriver: false }).start();
-  }, [index]);
-
-  const indicatorStyle = {
-    left: x.interpolate({
-      inputRange: TABS.map((_, i) => i),
-      outputRange: TABS.map((_, i) => `${(i / TABS.length) * 100}%`),
-    }),
-  };
-
   return (
     <View style={styles.tabBarWrap}>
       <View style={styles.tabBar}>
         <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFillObject} />
         <LinearGradient colors={["rgba(20,28,25,0.5)", "rgba(12,17,15,0.65)"]} style={StyleSheet.absoluteFillObject} />
-        <Animated.View style={[styles.tabIndicatorTrack, indicatorStyle]}>
-          <View style={styles.tabIndicator} />
-        </Animated.View>
-        {TABS.map((t) => (
-          <Pressable key={t.key} onPress={() => navigation.navigate(t.key)} style={styles.tabItem} hitSlop={8}>
-            <Feather name={t.icon} size={20} color={active === t.key ? colors.textPrimary : "rgba(255,255,255,0.4)"} />
-          </Pressable>
-        ))}
+        {TABS.map((t) => {
+          const isActive = active === t.key;
+          return (
+            <Pressable key={t.key} onPress={() => navigation.navigate(t.key)} style={styles.tabItem} hitSlop={8}>
+              <Feather name={t.icon} size={20} color={isActive ? colors.textPrimary : "rgba(255,255,255,0.4)"} />
+              {isActive && <View style={styles.tabDot} />}
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -495,9 +502,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "rgba(255,255,255,0.09)",
     ...shadow.sheet,
   },
-  tabItem: { flex: 1, height: 44, alignItems: "center", justifyContent: "center", zIndex: 2 },
-  tabIndicatorTrack: { position: "absolute", top: 0, bottom: 0, width: `${100 / TABS.length}%`, alignItems: "center", justifyContent: "center" },
-  tabIndicator: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.1)" },
+  tabItem: { flex: 1, height: 44, alignItems: "center", justifyContent: "center", gap: 4 },
+  tabDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.textPrimary },
 
   sheetBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)" },
   sheetBody: { position: "absolute", left: 0, right: 0, bottom: 0, overflow: "hidden", backgroundColor: "rgba(15,22,20,0.92)", borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: spacing.xl, paddingTop: spacing.md, maxHeight: "75%", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.1)" },

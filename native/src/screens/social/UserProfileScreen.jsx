@@ -1,15 +1,7 @@
 import { View, Text } from "react-native";
 import { Screen, Header, Button, Avatar, Row, EmptyState, colors, spacing, radius } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
-
-// Same pravatar.cc seeds as the seed posts in state/store.jsx, so the same
-// person looks the same wherever they show up.
-const DIRECTORY = {
-  "mara.eth": { name: "Mara Osei", initials: "MO", bio: "Position sizing over prediction. Ex-market maker.", avatarUrl: "https://i.pravatar.cc/150?u=mara" },
-  "0xquiet": { name: "Ines Duarte", initials: "ID", bio: "Funding rates and quiet charts.", avatarUrl: "https://i.pravatar.cc/150?u=ines" },
-  "leo.base": { name: "Leo Marchetti", initials: "LM", bio: "Self-custody maximalist. Test your backups.", avatarUrl: "https://i.pravatar.cc/150?u=leo" },
-  toby: { name: "Toby Vance", initials: "TV", bio: "Learning in public.", avatarUrl: "https://i.pravatar.cc/150?u=toby" },
-};
+import { DIRECTORY } from "../../data/directory";
 
 export default function UserProfileScreen({ navigation, route }) {
   const { handle } = route.params;
@@ -27,7 +19,7 @@ export default function UserProfileScreen({ navigation, route }) {
   const openThread = () => {
     const existing = state.chat.threads.find((t) => t.with.handle === handle);
     if (existing) return navigation.navigate("Conversation", { id: existing.id });
-    const thread = { id: `th${Date.now()}`, with: { handle, name: person.name, initials: person.initials }, messages: [] };
+    const thread = { id: `th${Date.now()}`, with: { handle, name: person.name, initials: person.initials, avatarUrl: person.avatarUrl }, messages: [] };
     dispatch({ type: "chat/startThread", thread });
     navigation.navigate("Conversation", { id: thread.id });
   };

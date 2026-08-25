@@ -23,7 +23,7 @@ export default function MarketScreen({ navigation }) {
   return (
     <Screen scroll={false}>
       <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600", marginBottom: spacing.md }}>Market</Text>
-      <TextField value={query} onChangeText={setQuery} placeholder="Search coins" />
+      <TextField value={query} onChangeText={setQuery} placeholder="Search coins" icon="search" />
 
       {!showingSearch && (
         <View style={{ flexDirection: "row", marginVertical: spacing.md }}>

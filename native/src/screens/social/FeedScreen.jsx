@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, FlatList, Pressable, Image } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, TabBar, IconButton, Chip, Avatar, Sheet, Button, Banner, EmptyState, colors, spacing, radius } from "../../ui/kit";
+import { Screen, TabBar, IconButton, TextField, Chip, Avatar, Sheet, Button, Banner, EmptyState, colors, spacing, radius } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";
 import { relativeTime } from "../../lib/time";
+import { DIRECTORY_LIST } from "../../data/directory";
 
 const FILTERS = [{ value: "all", label: "All" }, { value: "following", label: "Following" }, { value: "trending", label: "Trending" }];
 
@@ -39,6 +40,8 @@ export default function FeedScreen({ navigation }) {
   const toast = useToast();
   const [sheetFor, setSheetFor] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [searching, setSearching] = useState(false);
+  const [query, setQuery] = useState("");
 
   const hidden = new Set([...state.social.muted, ...state.social.blocked]);
   let posts = state.social.posts.filter((p) => !hidden.has(p.author.handle));
@@ -47,11 +50,18 @@ export default function FeedScreen({ navigation }) {
 
   const refresh = useAsyncAction(async () => {}, { label: "Refreshing feed" });
 
+  const searchResults = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return DIRECTORY_LIST.filter((p) => p.name.toLowerCase().includes(q) || p.handle.toLowerCase().includes(q));
+  }, [query]);
+
   return (
     <Screen scroll={false}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
         <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600" }}>Social</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
+          <IconButton icon="search" onPress={() => setSearching(true)} />
           <IconButton icon="refresh-cw" onPress={() => refresh.run()} />
           <IconButton icon="message-circle" onPress={() => navigation.navigate("Threads")} />
           <IconButton icon="plus" onPress={() => navigation.navigate("Compose")} />
@@ -71,6 +81,28 @@ export default function FeedScreen({ navigation }) {
           <PostRow post={p} onLike={() => dispatch({ type: "social/toggleLike", id: p.id })} onOpen={() => navigation.navigate("PostDetail", { id: p.id })} onOverflow={() => setSheetFor(p)} />
         )} />
       )}
+
+      <Sheet open={searching} onClose={() => { setSearching(false); setQuery(""); }} title="Search people">
+        <TextField value={query} onChangeText={setQuery} placeholder="Search by name or handle" icon="search" autoFocus />
+        <View style={{ height: spacing.md }} />
+        {query.trim() && searchResults.length === 0 ? (
+          <Text style={{ color: colors.textTertiary, fontSize: 13, textAlign: "center", paddingVertical: 12 }}>No accounts match "{query}".</Text>
+        ) : (
+          searchResults.map((p) => (
+            <Pressable
+              key={p.handle}
+              onPress={() => { setSearching(false); setQuery(""); navigation.navigate("UserProfile", { handle: p.handle }); }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 }}
+            >
+              <Avatar uri={p.avatarUrl} initials={p.initials} size={38} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 14 }}>{p.name}</Text>
+                <Text style={{ color: colors.textTertiary, fontSize: 12 }}>@{p.handle}</Text>
+              </View>
+            </Pressable>
+          ))
+        )}
+      </Sheet>
 
       <Sheet open={!!sheetFor} onClose={() => setSheetFor(null)} title={sheetFor ? `@${sheetFor.author.handle}` : ""}>
         <View style={{ gap: spacing.sm }}>
