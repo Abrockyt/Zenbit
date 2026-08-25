@@ -1,27 +1,49 @@
+import { useEffect } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, Switch as RNSwitch, TextInput, Image, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
-import { colors, spacing, radius } from "../theme";
+import Animated, { FadeIn, FadeInDown, SlideInDown, useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
+import { colors, spacing, radius, gradients, fonts, shadow } from "../theme";
 
 /**
- * Shared RN UI kit — one file, deliberately small.
+ * Shared RN UI kit — visual pass two.
  *
- * Ports the *behavior* of the web app's src/components/{core,forms,navigation}
- * primitives (Button, IconButton, ScreenHeader, TabBar row items, Chip,
- * Switch, SegmentedControl, EmptyState) without the glass/blur effects,
- * which have no RN equivalent without extra native deps. Every screen in
- * this app is built from these pieces so restyling stays centralized.
+ * Pass one ported *behavior* only (flat colors, no motion) to get all 46
+ * screens working fast. This pass ports the web app's actual look through
+ * the same shared components, so every screen picks it up at once: glass
+ * cards (BlurView, matching --surface-card + --grad-card), the gradient
+ * screen background (--grad-screen), a real floating glass tab bar with a
+ * sliding indicator, press/entrance animation via Reanimated (the RN
+ * equivalent of the web app's Framer Motion), and the actual type family
+ * (Hanken Grotesk / Geist Mono, loaded in App.tsx) instead of system font.
  */
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function usePressScale(to = 0.96) {
+  const scale = useSharedValue(1);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const onPressIn = () => { scale.value = withTiming(to, { duration: 90 }); };
+  const onPressOut = () => { scale.value = withSpring(1, { damping: 14, stiffness: 260 }); };
+  return { style, onPressIn, onPressOut };
+}
 
 export function Screen({ children, scroll = true, style, footer }) {
   const Wrap = scroll ? ScrollView : View;
   return (
-    <SafeAreaView style={[styles.screen, style]}>
-      <Wrap contentContainerStyle={scroll ? styles.scrollBody : styles.body} style={scroll ? { flex: 1 } : styles.body}>
-        {children}
-      </Wrap>
-      {footer}
-    </SafeAreaView>
+    <View style={[styles.screen, style]}>
+      <LinearGradient colors={gradients.screen} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.6 }} style={StyleSheet.absoluteFill} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <Animated.View entering={FadeIn.duration(260)} style={{ flex: 1 }}>
+          <Wrap contentContainerStyle={scroll ? styles.scrollBody : styles.body} style={scroll ? { flex: 1 } : styles.body}>
+            {children}
+          </Wrap>
+        </Animated.View>
+        {footer}
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -42,29 +64,38 @@ export function Header({ title, onBack, right }) {
 }
 
 export function Button({ children, onPress, variant = "primary", disabled, loading }) {
+  const { style: pressStyle, onPressIn, onPressOut } = usePressScale(0.97);
+  const inner = (
+    <Text
+      style={[
+        styles.buttonText,
+        variant === "primary" && styles.buttonTextPrimary,
+        variant === "secondary" && styles.buttonTextSecondary,
+        variant === "danger" && styles.buttonTextDanger,
+      ]}
+    >
+      {loading ? "Working…" : children}
+    </Text>
+  );
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={disabled || loading ? undefined : onPress}
-      style={({ pressed }) => [
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      style={[
+        pressStyle,
         styles.button,
-        variant === "primary" && styles.buttonPrimary,
         variant === "secondary" && styles.buttonSecondary,
         variant === "danger" && styles.buttonDanger,
         (disabled || loading) && styles.buttonDisabled,
-        pressed && !disabled && styles.buttonPressed,
       ]}
     >
-      <Text
-        style={[
-          styles.buttonText,
-          variant === "primary" && styles.buttonTextPrimary,
-          variant === "secondary" && styles.buttonTextSecondary,
-          variant === "danger" && styles.buttonTextDanger,
-        ]}
-      >
-        {loading ? "Working…" : children}
-      </Text>
-    </Pressable>
+      {variant === "primary" ? (
+        <LinearGradient colors={gradients.primaryButton} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFillObject, { borderRadius: radius.md }]} />
+      ) : null}
+      {inner}
+    </AnimatedPressable>
   );
 }
 
@@ -77,18 +108,19 @@ export function TextButton({ children, onPress, tone = "secondary" }) {
 }
 
 export function IconButton({ icon, onPress, badge, size = 20 }) {
+  const { style: pressStyle, onPressIn, onPressOut } = usePressScale(0.88);
   return (
-    <Pressable onPress={onPress} style={styles.iconButton} hitSlop={8}>
+    <AnimatedPressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} style={[pressStyle, styles.iconButton]} hitSlop={8}>
       <Feather name={icon} size={size} color={colors.textPrimary} />
       {badge ? <View style={styles.badgeDot} /> : null}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 export function Row({ icon, title, subtitle, right, onPress, danger }) {
   const Wrap = onPress ? Pressable : View;
   return (
-    <Wrap onPress={onPress} style={({ pressed }) => [styles.row, pressed && onPress && { opacity: 0.6 }]}>
+    <Wrap onPress={onPress} style={({ pressed }) => [styles.row, pressed && onPress && { opacity: 0.55 }]}>
       {icon ? (
         <View style={styles.rowIcon}>
           <Feather name={icon} size={16} color={danger ? colors.down : colors.textSecondary} />
@@ -103,8 +135,16 @@ export function Row({ icon, title, subtitle, right, onPress, danger }) {
   );
 }
 
+// Glass card — BlurView for the translucent depth, a soft gradient sheen on
+// top of it, matching the web app's --surface-card / --grad-card look.
 export function Card({ children, style }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  return (
+    <View style={[styles.card, style]}>
+      <BlurView intensity={24} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <LinearGradient colors={gradients.card} style={StyleSheet.absoluteFillObject} />
+      <View>{children}</View>
+    </View>
+  );
 }
 
 export function Chip({ label, active, onPress }) {
@@ -163,7 +203,7 @@ export function Avatar({ uri, initials, size = 36 }) {
       {uri ? (
         <Image source={{ uri }} style={{ width: size, height: size }} />
       ) : (
-        <Text style={{ color: colors.textPrimary, fontSize: size * 0.38, fontWeight: "600" }}>{initials}</Text>
+        <Text style={{ color: colors.textPrimary, fontSize: size * 0.38, fontFamily: fonts.semibold }}>{initials}</Text>
       )}
     </View>
   );
@@ -180,20 +220,20 @@ export function SectionHeader({ title, action, onAction }) {
 
 export function EmptyState({ icon = "inbox", title, body }) {
   return (
-    <View style={styles.empty}>
+    <Animated.View entering={FadeInDown.duration(300)} style={styles.empty}>
       <Feather name={icon} size={28} color={colors.textTertiary} />
       <Text style={styles.emptyTitle}>{title}</Text>
       {body ? <Text style={styles.emptyBody}>{body}</Text> : null}
-    </View>
+    </Animated.View>
   );
 }
 
 export function Banner({ tone = "info", children }) {
   const toneColor = tone === "danger" ? colors.down : tone === "warn" ? colors.warn : colors.info;
   return (
-    <View style={[styles.banner, { borderColor: toneColor + "55", backgroundColor: toneColor + "14" }]}>
+    <Animated.View entering={FadeIn.duration(220)} style={[styles.banner, { borderColor: toneColor + "55", backgroundColor: toneColor + "14" }]}>
       <Text style={[styles.bannerText, { color: toneColor }]}>{children}</Text>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -205,7 +245,7 @@ export function Keypad({ onKey }) {
         k === "" ? (
           <View key={i} style={styles.keypadKey} />
         ) : (
-          <Pressable key={i} onPress={() => onKey(k)} style={({ pressed }) => [styles.keypadKey, pressed && { opacity: 0.5 }]}>
+          <Pressable key={i} onPress={() => onKey(k)} style={({ pressed }) => [styles.keypadKey, pressed && { opacity: 0.5, backgroundColor: colors.surfaceRaised }]}>
             {k === "back" ? (
               <Feather name="delete" size={22} color={colors.textPrimary} />
             ) : (
@@ -235,6 +275,8 @@ export function Dots({ count, filled, tone }) {
   );
 }
 
+// Real floating glass tab bar — matches the web TabBar.jsx: rounded pill,
+// blurred glass background, a sliding indicator behind the active icon.
 const TABS = [
   { key: "Home", icon: "home" },
   { key: "Market", icon: "bar-chart-2" },
@@ -244,13 +286,31 @@ const TABS = [
   { key: "Profile", icon: "user" },
 ];
 export function TabBar({ navigation, active }) {
+  const index = Math.max(0, TABS.findIndex((t) => t.key === active));
+  const x = useSharedValue(index);
+
+  useEffect(() => {
+    x.value = withSpring(index, { damping: 18, stiffness: 220 });
+  }, [index]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    left: `${(x.value / TABS.length) * 100}%`,
+  }));
+
   return (
-    <View style={styles.tabBar}>
-      {TABS.map((t) => (
-        <Pressable key={t.key} onPress={() => navigation.navigate(t.key)} style={styles.tabItem} hitSlop={8}>
-          <Feather name={t.icon} size={20} color={active === t.key ? colors.up : colors.textTertiary} />
-        </Pressable>
-      ))}
+    <View style={styles.tabBarWrap}>
+      <View style={styles.tabBar}>
+        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFillObject} />
+        <LinearGradient colors={["rgba(20,28,25,0.5)", "rgba(12,17,15,0.65)"]} style={StyleSheet.absoluteFillObject} />
+        <Animated.View style={[styles.tabIndicatorTrack, indicatorStyle]}>
+          <View style={styles.tabIndicator} />
+        </Animated.View>
+        {TABS.map((t) => (
+          <Pressable key={t.key} onPress={() => navigation.navigate(t.key)} style={styles.tabItem} hitSlop={8}>
+            <Feather name={t.icon} size={20} color={active === t.key ? colors.textPrimary : "rgba(255,255,255,0.4)"} />
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
@@ -258,19 +318,19 @@ export function TabBar({ navigation, active }) {
 export function PriceRow({ symbol, name, price, changePct, holding, iconUrl, onPress }) {
   const up = (changePct ?? 0) >= 0;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.55 }]}>
       {iconUrl ? (
         <Image source={{ uri: iconUrl }} style={{ width: 32, height: 32, borderRadius: 16 }} />
       ) : (
-        <View style={styles.rowIcon}><Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: "700" }}>{symbol?.slice(0, 2).toUpperCase()}</Text></View>
+        <View style={styles.rowIcon}><Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: fonts.bold }}>{symbol?.slice(0, 2).toUpperCase()}</Text></View>
       )}
       <View style={{ flex: 1 }}>
         <Text style={styles.rowTitle}>{name}</Text>
         <Text style={styles.rowSubtitle}>{holding ?? symbol?.toUpperCase()}</Text>
       </View>
       <View style={{ alignItems: "flex-end" }}>
-        <Text style={styles.rowTitle}>${Number(price ?? 0).toLocaleString("en-US", { maximumFractionDigits: price < 1 ? 4 : 2 })}</Text>
-        <Text style={{ fontSize: 12, marginTop: 2, color: up ? colors.up : colors.down }}>{up ? "+" : ""}{(changePct ?? 0).toFixed(2)}%</Text>
+        <Text style={[styles.rowTitle, { fontFamily: fonts.mono }]}>${Number(price ?? 0).toLocaleString("en-US", { maximumFractionDigits: price < 1 ? 4 : 2 })}</Text>
+        <Text style={{ fontSize: 12, marginTop: 2, fontFamily: fonts.mono, color: up ? colors.up : colors.down }}>{up ? "+" : ""}{(changePct ?? 0).toFixed(2)}%</Text>
       </View>
     </Pressable>
   );
@@ -278,13 +338,16 @@ export function PriceRow({ symbol, name, price, changePct, holding, iconUrl, onP
 
 export function Sheet({ open, onClose, title, children }) {
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.sheetBackdrop} onPress={onClose} />
-      <View style={styles.sheetBody}>
-        <View style={styles.sheetHandle} />
-        {title ? <Text style={styles.sheetTitle}>{title}</Text> : null}
-        {children}
-      </View>
+      {open && (
+        <Animated.View entering={SlideInDown.springify().damping(18).stiffness(220)} style={styles.sheetBody}>
+          <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFillObject} />
+          <View style={styles.sheetHandle} />
+          {title ? <Text style={styles.sheetTitle}>{title}</Text> : null}
+          {children}
+        </Animated.View>
+      )}
     </Modal>
   );
 }
@@ -294,7 +357,8 @@ export function ResultDialog({ tone = "success", title, message, primaryLabel, o
   return (
     <Modal visible transparent animationType="fade">
       <View style={styles.resultBackdrop}>
-        <View style={styles.resultCard}>
+        <LinearGradient colors={gradients.screen} style={StyleSheet.absoluteFillObject} />
+        <Animated.View entering={FadeInDown.duration(320)} style={styles.resultCard}>
           <View style={[styles.resultIcon, { backgroundColor: tint + "20", borderColor: tint }]}>
             <Feather name={tone === "success" ? "check" : "x"} size={26} color={tint} />
           </View>
@@ -304,7 +368,7 @@ export function ResultDialog({ tone = "success", title, message, primaryLabel, o
             <Button onPress={onPrimary}>{primaryLabel}</Button>
             {secondaryLabel && <Button variant="secondary" onPress={onSecondary}>{secondaryLabel}</Button>}
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -319,41 +383,39 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   headerBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { flex: 1, textAlign: "center", color: colors.textPrimary, fontSize: 16, fontWeight: "600" },
+  headerTitle: { flex: 1, textAlign: "center", color: colors.textPrimary, fontSize: 16, fontFamily: fonts.semibold },
 
-  button: { borderRadius: radius.md, paddingVertical: 15, alignItems: "center", justifyContent: "center" },
-  buttonPrimary: { backgroundColor: colors.up },
+  button: { borderRadius: radius.md, paddingVertical: 15, alignItems: "center", justifyContent: "center", overflow: "hidden", ...shadow.cta },
   buttonSecondary: { backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.borderDefault },
   buttonDanger: { backgroundColor: colors.downDim, borderWidth: 1, borderColor: colors.down },
   buttonDisabled: { opacity: 0.4 },
-  buttonPressed: { opacity: 0.85 },
-  buttonText: { fontSize: 15, fontWeight: "600" },
+  buttonText: { fontSize: 15, fontFamily: fonts.semibold },
   buttonTextPrimary: { color: "#03150c" },
   buttonTextSecondary: { color: colors.textPrimary },
   buttonTextDanger: { color: colors.down },
 
   textButton: { paddingVertical: 6, paddingHorizontal: 4 },
-  textButtonLabel: { color: colors.up, fontSize: 13, fontWeight: "500" },
+  textButtonLabel: { color: colors.up, fontSize: 13, fontFamily: fonts.medium },
 
   iconButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceRaised },
   badgeDot: { position: "absolute", top: 8, right: 9, width: 7, height: 7, borderRadius: 4, backgroundColor: colors.down },
 
   row: { flexDirection: "row", alignItems: "center", paddingVertical: 14, gap: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderSubtle },
   rowIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" },
-  rowTitle: { color: colors.textPrimary, fontSize: 15, fontWeight: "500" },
+  rowTitle: { color: colors.textPrimary, fontSize: 15, fontFamily: fonts.medium },
   rowSubtitle: { color: colors.textTertiary, fontSize: 12, marginTop: 2 },
 
-  card: { backgroundColor: colors.surfaceCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderSubtle, padding: spacing.lg },
+  card: { borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderSubtle, padding: spacing.lg, overflow: "hidden" },
 
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised, marginRight: 8 },
   chipActive: { backgroundColor: colors.up },
-  chipLabel: { color: colors.textSecondary, fontSize: 13, fontWeight: "500" },
+  chipLabel: { color: colors.textSecondary, fontSize: 13, fontFamily: fonts.medium },
   chipLabelActive: { color: "#03150c" },
 
   segment: { flexDirection: "row", backgroundColor: colors.surfaceRaised, borderRadius: radius.md, padding: 3 },
   segmentItem: { flex: 1, paddingVertical: 9, alignItems: "center", borderRadius: radius.sm - 2 },
   segmentItemActive: { backgroundColor: colors.surfaceCardSolid },
-  segmentLabel: { color: colors.textSecondary, fontSize: 13, fontWeight: "500" },
+  segmentLabel: { color: colors.textSecondary, fontSize: 13, fontFamily: fonts.medium },
   segmentLabelActive: { color: colors.textPrimary },
 
   input: { backgroundColor: colors.surfaceRaised, borderRadius: radius.md, borderWidth: 1, borderColor: colors.borderDefault, color: colors.textPrimary, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15 },
@@ -361,10 +423,10 @@ const styles = StyleSheet.create({
   avatar: { backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center", overflow: "hidden" },
 
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.md },
-  sectionTitle: { color: colors.textPrimary, fontSize: 15, fontWeight: "600" },
+  sectionTitle: { color: colors.textPrimary, fontSize: 15, fontFamily: fonts.semibold },
 
   empty: { alignItems: "center", justifyContent: "center", paddingVertical: 48, gap: 8 },
-  emptyTitle: { color: colors.textPrimary, fontSize: 14, fontWeight: "600" },
+  emptyTitle: { color: colors.textPrimary, fontSize: 14, fontFamily: fonts.semibold },
   emptyBody: { color: colors.textTertiary, fontSize: 13, textAlign: "center", paddingHorizontal: 24 },
 
   banner: { borderWidth: 1, borderRadius: radius.md, padding: spacing.md },
@@ -372,19 +434,27 @@ const styles = StyleSheet.create({
 
   keypad: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 14, width: 3 * 72 + 2 * 14 },
   keypadKey: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
-  keypadDigit: { color: colors.textPrimary, fontSize: 26, fontWeight: "400" },
+  keypadDigit: { color: colors.textPrimary, fontSize: 26, fontFamily: fonts.regular },
 
-  tabBar: { flexDirection: "row", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderSubtle, paddingTop: 10, paddingBottom: 6 },
-  tabItem: { flex: 1, alignItems: "center" },
+  tabBarWrap: { position: "absolute", left: 20, right: 20, bottom: 26 },
+  tabBar: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    height: 64, borderRadius: 999, paddingHorizontal: 12, overflow: "hidden",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.09)",
+    ...shadow.sheet,
+  },
+  tabItem: { flex: 1, height: 44, alignItems: "center", justifyContent: "center", zIndex: 2 },
+  tabIndicatorTrack: { position: "absolute", top: 0, bottom: 0, width: `${100 / TABS.length}%`, alignItems: "center", justifyContent: "center" },
+  tabIndicator: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.1)" },
 
   sheetBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)" },
-  sheetBody: { position: "absolute", left: 0, right: 0, bottom: 0, backgroundColor: colors.surfaceCardSolid, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, maxHeight: "75%" },
+  sheetBody: { position: "absolute", left: 0, right: 0, bottom: 0, overflow: "hidden", backgroundColor: "rgba(15,22,20,0.92)", borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: spacing.xl, paddingTop: spacing.md, maxHeight: "75%", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.1)" },
   sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.borderStrong, alignSelf: "center", marginBottom: spacing.md },
-  sheetTitle: { color: colors.textPrimary, fontSize: 16, fontWeight: "600", marginBottom: spacing.md },
+  sheetTitle: { color: colors.textPrimary, fontSize: 17, fontFamily: fonts.semibold, marginBottom: spacing.md },
 
-  resultBackdrop: { flex: 1, backgroundColor: colors.surfaceScreen, alignItems: "center", justifyContent: "center", padding: spacing.xl },
+  resultBackdrop: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.xl },
   resultCard: { alignItems: "center", width: "100%" },
   resultIcon: { width: 60, height: 60, borderRadius: 30, borderWidth: 1, alignItems: "center", justifyContent: "center", marginBottom: spacing.md },
-  resultTitle: { color: colors.textPrimary, fontSize: 20, fontWeight: "600" },
+  resultTitle: { color: colors.textPrimary, fontSize: 20, fontFamily: fonts.semibold },
   resultMessage: { color: colors.textSecondary, fontSize: 14, textAlign: "center", marginTop: 8, maxWidth: 280 },
 });

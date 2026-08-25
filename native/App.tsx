@@ -1,9 +1,30 @@
+import { useCallback, useEffect } from "react";
+import { View, Text, TextInput } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
+import { useFonts, HankenGrotesk_400Regular, HankenGrotesk_500Medium, HankenGrotesk_600SemiBold, HankenGrotesk_700Bold } from "@expo-google-fonts/hanken-grotesk";
+import { GeistMono_500Medium, GeistMono_600SemiBold } from "@expo-google-fonts/geist-mono";
+import { ChakraPetch_600SemiBold } from "@expo-google-fonts/chakra-petch";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 // @ts-nocheck — screens are .jsx, not yet typed
 import { AppProvider } from "./src/state/store";
+import { colors, fonts } from "./src/theme";
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Applies the loaded Hanken Grotesk everywhere without touching every
+// screen's <Text> — same trick real apps use to set a global type family.
+// @ts-ignore — defaultProps still works for these RN class components.
+Text.defaultProps = { ...(Text.defaultProps ?? {}), style: [{ fontFamily: fonts.regular, color: colors.textPrimary }] };
+// @ts-ignore
+TextInput.defaultProps = { ...(TextInput.defaultProps ?? {}), style: [{ fontFamily: fonts.regular }], placeholderTextColor: colors.textTertiary };
+
+const NavTheme = {
+  ...DarkTheme,
+  colors: { ...DarkTheme.colors, background: colors.surfaceScreen, card: colors.surfaceScreen, border: colors.borderSubtle, primary: colors.up },
+};
 
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import HomeScreen from "./src/screens/HomeScreen";
@@ -67,10 +88,27 @@ const Stack = createNativeStackNavigator();
  * same as the web version's Buy.jsx/Sell.jsx wrapping one TradeFlow.
  */
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    HankenGrotesk_400Regular,
+    HankenGrotesk_500Medium,
+    HankenGrotesk_600SemiBold,
+    HankenGrotesk_700Bold,
+    GeistMono_500Medium,
+    GeistMono_600SemiBold,
+    ChakraPetch_600SemiBold,
+  });
+
+  const onLayout = useCallback(() => {
+    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
   return (
     <SafeAreaProvider>
     <AppProvider>
-      <NavigationContainer>
+      <NavigationContainer theme={NavTheme}>
+        <View style={{ flex: 1 }} onLayout={onLayout}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -127,6 +165,7 @@ export default function App() {
           <Stack.Screen name="Currency" component={CurrencyScreen} />
           <Stack.Screen name="PriceAlerts" component={PriceAlertsScreen} />
         </Stack.Navigator>
+        </View>
       </NavigationContainer>
       <StatusBar style="light" />
     </AppProvider>
