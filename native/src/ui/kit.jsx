@@ -1,4 +1,5 @@
-import { View, Text, Pressable, StyleSheet, SafeAreaView, ScrollView, Switch as RNSwitch, TextInput, Image, Modal } from "react-native";
+import { View, Text, Pressable, StyleSheet, ScrollView, Switch as RNSwitch, TextInput, Image, Modal } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { colors, spacing, radius } from "../theme";
 

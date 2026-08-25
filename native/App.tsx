@@ -1,4 +1,5 @@
 import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 // @ts-nocheck — screens are .jsx, not yet typed
@@ -67,6 +68,7 @@ const Stack = createNativeStackNavigator();
  */
 export default function App() {
   return (
+    <SafeAreaProvider>
     <AppProvider>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -128,5 +130,6 @@ export default function App() {
       </NavigationContainer>
       <StatusBar style="light" />
     </AppProvider>
+    </SafeAreaProvider>
   );
 }
