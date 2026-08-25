@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, View, Text, Pressable, StyleSheet, ScrollView, Switch as RNSwitch, TextInput, Image, Modal } from "react-native";
+import { Animated, Easing, View, Text, Pressable, StyleSheet, ScrollView, Switch as RNSwitch, TextInput, Image, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -354,6 +354,23 @@ export function SkeletonRow() {
         <Skeleton width={40} height={11} />
       </View>
     </View>
+  );
+}
+
+// A real spinning indicator (not a static glyph) for any "this is actively
+// working" moment — order processing, a simulated scan, a submit in flight.
+export function Spinner({ size = 28, color = colors.up }) {
+  const spin = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 900, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, []);
+  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
+  return (
+    <Animated.View style={{ transform: [{ rotate }] }}>
+      <Feather name="loader" size={size} color={color} />
+    </Animated.View>
   );
 }
 

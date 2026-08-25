@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, Header, Button, TextField, Row, Banner, EmptyState, Skeleton, colors, spacing, radius } from "../../ui/kit";
+import { Screen, Header, Button, TextField, Row, Banner, EmptyState, Skeleton, Spinner, colors, spacing, radius, fonts } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";
 import { useMarkets } from "../../data/useCoinGecko";
@@ -12,11 +12,20 @@ const QUICK = [50, 100, 500, 1000];
 const FEE_RATE = 0.0149;
 const LOCK_SECONDS = 15;
 
+// Real steps a payment actually goes through, shown one at a time while
+// commit() is in flight — not decorative, this is what minDuration below is
+// pacing against, so the copy and the wait always agree with each other.
+const PROCESSING_STEPS = [
+  "Verifying order details",
+  "Authorizing with payment provider",
+  "Broadcasting to the network",
+];
+
 /**
  * Ported from src/pages/money/TradeFlow.jsx (web) — shared by Buy and Sell,
- * mode flips the sign. Keeps the price-lock countdown on review (expires,
- * must be refreshed rather than silently executing at a stale rate) and the
- * deterministic declined-card failure on a round $666 amount.
+ * mode flips the sign. Full funnel now: amount -> review -> payment method ->
+ * processing -> receipt, matching how a real order actually moves (payment
+ * selection and processing are their own steps, not folded into review).
  */
 export default function TradeFlowScreen({ navigation, route }) {
   const buying = route.name === "Buy";
@@ -24,17 +33,21 @@ export default function TradeFlowScreen({ navigation, route }) {
   const toast = useToast();
   const cur = state.settings.currency;
 
-  const { data: markets, loading, error } = useMarkets(COINS);
+  const { data: markets, loading, error, refetch } = useMarkets(COINS);
 
   const [coinId, setCoinId] = useState("bitcoin");
   const [fiatAmount, setFiatAmount] = useState("");
   const [stage, setStage] = useState("form");
   const [lock, setLock] = useState(LOCK_SECONDS);
+  const [methodId, setMethodId] = useState(null);
+  const [step, setStep] = useState(0);
+  const [orderId] = useState(() => `ZB${Date.now().toString(36).toUpperCase()}`);
 
   const market = markets?.find((m) => m.id === coinId);
   const price = market?.current_price ?? 0;
   const holding = state.wallet.holdings.find((h) => h.id === coinId);
-  const method = state.paymentMethods[0];
+  const defaultMethod = state.paymentMethods[0];
+  const method = state.paymentMethods.find((m) => m.id === methodId) ?? defaultMethod;
 
   const fiat = Number(fiatAmount) || 0;
   const units = price ? fiat / price : 0;
@@ -42,7 +55,7 @@ export default function TradeFlowScreen({ navigation, route }) {
   const total = buying ? fiat + fee : fiat - fee;
 
   const sellingTooMuch = !buying && holding ? units > holding.units : !buying;
-  const canReview = fiat > 0 && price > 0 && (buying ? Boolean(method) : !sellingTooMuch);
+  const canReview = fiat > 0 && price > 0 && (buying ? Boolean(defaultMethod) : !sellingTooMuch);
 
   useEffect(() => {
     if (stage !== "review") return;
@@ -56,14 +69,34 @@ export default function TradeFlowScreen({ navigation, route }) {
     dispatch({ type: "wallet/adjustUnits", id: coinId, delta: buying ? units : -units });
     dispatch({
       type: "wallet/addTransaction",
-      tx: { id: `t${Date.now()}`, kind: buying ? "buy" : "sell", title: `${buying ? "Bought" : "Sold"} ${market.symbol.toUpperCase()}`, subtitle: buying ? (method?.label ?? "Card") : "To account balance", amount: fiat, negative: !buying, date: "Just now", status: "complete", units, symbol: market.symbol, fee },
+      tx: { id: orderId, kind: buying ? "buy" : "sell", title: `${buying ? "Bought" : "Sold"} ${market.symbol.toUpperCase()}`, subtitle: buying ? (method?.label ?? "Card") : "To account balance", amount: fiat, negative: !buying, date: "Just now", status: "complete", units, symbol: market.symbol, fee },
     });
-  }, { label: buying ? "Processing payment" : "Processing sale", queueWhenOffline: true });
+  }, { label: buying ? "Processing payment" : "Processing sale", queueWhenOffline: true, minDuration: PROCESSING_STEPS.length * 1000 });
 
-  const confirm = async () => {
-    await commit.run();
-    if (!commit.isError && !commit.isQueued) setStage("done");
-  };
+  // Order Processing is its own screen, not a spinner glued to a button —
+  // entering it kicks off the real commit and steps through what's actually
+  // happening while minDuration keeps it on screen long enough to read.
+  // Reacting to commit.isSuccess/isError/isQueued (rather than chaining off
+  // the run() promise) matters here: a .then() closes over `commit` from the
+  // render that created it, so checking commit.isQueued inside it would
+  // always see the pre-run value, never the resolved one.
+  useEffect(() => {
+    if (stage !== "processing") return;
+    setStep(0);
+    commit.run();
+  }, [stage]);
+
+  useEffect(() => {
+    if (stage !== "processing") return;
+    if (commit.isSuccess) setStage("receipt");
+    else if (commit.isError || commit.isQueued) setStage("payment");
+  }, [stage, commit.isSuccess, commit.isError, commit.isQueued]);
+
+  useEffect(() => {
+    if (stage !== "processing" || commit.isError || commit.isQueued) return;
+    const t = setInterval(() => setStep((s) => Math.min(s + 1, PROCESSING_STEPS.length - 1)), 1000);
+    return () => clearInterval(t);
+  }, [stage, commit.isError, commit.isQueued]);
 
   if (loading && !markets) {
     return (
@@ -76,9 +109,19 @@ export default function TradeFlowScreen({ navigation, route }) {
       </Screen>
     );
   }
-  if (error) return <Screen><Header title={buying ? "Buy" : "Sell"} onBack={() => navigation.goBack()} /><Banner tone="danger">We can't price this trade right now, so it would be unsafe to quote you. Try again in a moment.</Banner></Screen>;
+  if (error && !markets?.length) {
+    return (
+      <Screen>
+        <Header title={buying ? "Buy" : "Sell"} onBack={() => navigation.goBack()} />
+        <Banner tone="danger">We can't price this trade right now, so it would be unsafe to quote you.</Banner>
+        <View style={{ marginTop: spacing.md }}>
+          <Button onPress={refetch}>Try again</Button>
+        </View>
+      </Screen>
+    );
+  }
 
-  if (buying && !method) {
+  if (buying && !defaultMethod) {
     return (
       <Screen>
         <Header title="Buy" onBack={() => navigation.goBack()} />
@@ -88,29 +131,135 @@ export default function TradeFlowScreen({ navigation, route }) {
     );
   }
 
-  if (stage === "done") {
+  // ---------------------------------------------------------------- Receipt
+  if (stage === "receipt") {
+    const rows = [
+      ["Order ID", orderId],
+      ["Date", new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })],
+      [buying ? "You bought" : "You sold", formatCrypto(units, market.symbol.toUpperCase())],
+      ["Price", `${formatMoney(price, cur)} / ${market.symbol.toUpperCase()}`],
+      ["Fee", formatMoney(fee, cur)],
+      [buying ? "Total charged" : "Total received", formatMoney(total, cur)],
+      ["Payment method", method?.label ?? "—"],
+      ["Status", "Completed"],
+    ];
     return (
       <Screen
         footer={
           <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
-            <Button onPress={() => navigation.navigate("Home")}>Done</Button>
-            <Button variant="secondary" onPress={() => { setStage("form"); setFiatAmount(""); commit.reset(); }}>{buying ? "Buy more" : "Sell more"}</Button>
+            <Button onPress={() => navigation.navigate("Home")}>View in portfolio</Button>
+            <Button variant="secondary" onPress={() => { setStage("form"); setFiatAmount(""); setMethodId(null); commit.reset(); }}>{buying ? "Buy more" : "Sell more"}</Button>
           </View>
         }
       >
-        <Header title={buying ? "Buy" : "Sell"} onBack={() => navigation.navigate("Home")} />
-        <View style={{ alignItems: "center", gap: 14, paddingVertical: 40, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle }}>
+        <Header title="Receipt" onBack={() => navigation.navigate("Home")} />
+        <View style={{ alignItems: "center", gap: 10, paddingVertical: 32, marginBottom: spacing.md }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: "rgba(58,222,126,0.12)", borderWidth: 1, borderColor: colors.up, alignItems: "center", justifyContent: "center" }}>
             <Feather name="check" size={24} color={colors.up} />
           </View>
-          <Text style={{ color: colors.textPrimary, fontSize: 18, fontWeight: "600" }}>{buying ? "Purchase complete" : "Sale complete"}</Text>
-          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "700" }}>{formatCrypto(units, market.symbol.toUpperCase())}</Text>
-          <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{buying ? `Charged ${formatMoney(total, cur)} to ${method?.label ?? "your card"}.` : `${formatMoney(total, cur)} added to your account balance.`}</Text>
+          <Text style={{ color: colors.textPrimary, fontSize: 18, fontFamily: fonts.semibold }}>{buying ? "Purchase complete" : "Sale complete"}</Text>
+          <Text style={{ color: colors.textPrimary, fontSize: 28, fontFamily: fonts.bold }}>{formatCrypto(units, market.symbol.toUpperCase())}</Text>
+        </View>
+
+        <View style={{ padding: 20, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, gap: 13 }}>
+          {rows.map(([k, v], i) => (
+            <View key={k} style={{ flexDirection: "row", justifyContent: "space-between", borderTopWidth: i > 0 ? 1 : 0, borderTopColor: colors.borderSubtle, paddingTop: i > 0 ? 12 : 0 }}>
+              <Text style={{ color: colors.textTertiary, fontSize: 13 }}>{k}</Text>
+              <Text style={{ color: k === "Status" ? colors.up : colors.textPrimary, fontSize: 13, fontFamily: fonts.mono, maxWidth: "60%", textAlign: "right" }} numberOfLines={1}>{v}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Pressable onPress={() => toast("Receipt copied.")} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 14 }}>
+          <Feather name="share" size={14} color={colors.textSecondary} />
+          <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: fonts.medium }}>Share receipt</Text>
+        </Pressable>
+      </Screen>
+    );
+  }
+
+  // ------------------------------------------------------------- Processing
+  if (stage === "processing") {
+    return (
+      <Screen scroll={false}>
+        <Header title="" />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 22 }}>
+          <Spinner size={40} />
+          <View style={{ alignItems: "center", gap: 6 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: 16, fontFamily: fonts.semibold }}>Processing your order</Text>
+            <Text style={{ color: colors.textTertiary, fontSize: 13 }}>Don't close the app — this takes a few seconds.</Text>
+          </View>
+          <View style={{ gap: 10, marginTop: 8 }}>
+            {PROCESSING_STEPS.map((s, i) => (
+              <View key={s} style={{ flexDirection: "row", alignItems: "center", gap: 10, opacity: i <= step ? 1 : 0.35 }}>
+                {i < step ? (
+                  <Feather name="check-circle" size={15} color={colors.up} />
+                ) : i === step ? (
+                  <Spinner size={15} />
+                ) : (
+                  <View style={{ width: 15, height: 15, borderRadius: 8, borderWidth: 1.5, borderColor: colors.borderStrong }} />
+                )}
+                <Text style={{ color: i <= step ? colors.textPrimary : colors.textTertiary, fontSize: 13 }}>{s}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </Screen>
     );
   }
 
+  // ------------------------------------------------------------------ Payment
+  if (stage === "payment") {
+    return (
+      <Screen
+        footer={
+          <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
+            <Button onPress={() => setStage("processing")} disabled={!method}>{buying ? `Pay ${formatMoney(total, cur)}` : `Confirm sale`}</Button>
+            <Button variant="secondary" onPress={() => setStage("review")}>Back</Button>
+          </View>
+        }
+      >
+        <Header title="Payment" onBack={() => setStage("review")} />
+
+        {commit.isError && <View style={{ marginBottom: spacing.md }}><Banner tone="danger">{buying ? "Card declined." : "Sale failed."} {commit.error?.message} Nothing was charged and your balance is unchanged.</Banner></View>}
+        {commit.isQueued && <View style={{ marginBottom: spacing.md }}><Banner tone="warn">You're offline. This order is queued and submits once — never twice — when you reconnect.</Banner></View>}
+
+        <Text style={{ color: colors.textTertiary, fontSize: 12, marginBottom: spacing.sm }}>Pay with</Text>
+        {state.paymentMethods.map((m) => {
+          const selected = m.id === method?.id;
+          return (
+            <Pressable
+              key={m.id}
+              onPress={() => setMethodId(m.id)}
+              style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: selected ? colors.up : colors.borderSubtle, marginBottom: spacing.sm }}
+            >
+              <Feather name={m.brand === "UPI" ? "smartphone" : "credit-card"} size={18} color={colors.textSecondary} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.textPrimary, fontSize: 14 }}>{m.label}</Text>
+                <Text style={{ color: colors.textTertiary, fontSize: 11.5 }}>{m.expiry ? `Expires ${m.expiry}` : "Linked via QR"}</Text>
+              </View>
+              <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: selected ? colors.up : colors.borderStrong, alignItems: "center", justifyContent: "center" }}>
+                {selected && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.up }} />}
+              </View>
+            </Pressable>
+          );
+        })}
+        <Pressable onPress={() => navigation.navigate("PaymentMethods")} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 10 }}>
+          <Feather name="plus" size={14} color={colors.up} />
+          <Text style={{ color: colors.up, fontSize: 13, fontFamily: fonts.medium }}>Add a payment method</Text>
+        </Pressable>
+
+        <View style={{ padding: 16, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginTop: spacing.md }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <Text style={{ color: colors.textTertiary, fontSize: 13 }}>{buying ? "You pay" : "You receive"}</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 15, fontFamily: fonts.semibold }}>{formatMoney(total, cur)}</Text>
+          </View>
+        </View>
+      </Screen>
+    );
+  }
+
+  // ------------------------------------------------------------------- Review
   if (stage === "review") {
     const expired = lock === 0;
     const rows = [
@@ -124,18 +273,8 @@ export default function TradeFlowScreen({ navigation, route }) {
       <Screen
         footer={
           <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
-            {!commit.isError && !commit.isQueued && (
-              <>
-                {expired ? <Button onPress={() => setLock(LOCK_SECONDS)}>Refresh price</Button> : <Button loading={commit.isLoading} onPress={confirm}>{buying ? "Confirm buy" : "Confirm sell"}</Button>}
-                <Button variant="secondary" onPress={() => setStage("form")}>Back</Button>
-              </>
-            )}
-            {commit.isError && (
-              <>
-                <Button onPress={() => commit.reset()}>Try again</Button>
-                <Button variant="secondary" onPress={() => { commit.reset(); setStage("form"); }}>{buying ? "Use another card" : "Edit amount"}</Button>
-              </>
-            )}
+            {expired ? <Button onPress={() => setLock(LOCK_SECONDS)}>Refresh price</Button> : <Button onPress={() => setStage("payment")}>Continue to payment</Button>}
+            <Button variant="secondary" onPress={() => setStage("form")}>Back</Button>
           </View>
         }
       >
@@ -149,18 +288,14 @@ export default function TradeFlowScreen({ navigation, route }) {
           ))}
         </View>
 
-        {buying && <Row icon="credit-card" title={method?.label ?? "Card"} subtitle="Payment method" onPress={() => navigation.navigate("PaymentMethods")} />}
-
         <Text style={{ color: expired ? colors.down : colors.textTertiary, fontSize: 12, textAlign: "center", marginVertical: spacing.md }}>
           {expired ? "Price expired" : `Price locked for ${lock}s`}
         </Text>
-
-        {commit.isError && <Banner tone="danger">{buying ? "Card declined." : "Sale failed."} {commit.error?.message} Nothing was charged and your balance is unchanged.</Banner>}
-        {commit.isQueued && <Banner tone="warn">You're offline. This order is queued and submits once — never twice — when you reconnect.</Banner>}
       </Screen>
     );
   }
 
+  // --------------------------------------------------------------------- Form
   return (
     <Screen
       footer={
@@ -202,7 +337,7 @@ export default function TradeFlowScreen({ navigation, route }) {
         {buying ? `${market?.symbol?.toUpperCase()} is ${formatMoney(price, cur)} right now.` : sellingTooMuch ? `You only hold ${formatCrypto(holding?.units ?? 0, market?.symbol?.toUpperCase() ?? "")}.` : `Available ${formatCrypto(holding?.units ?? 0, market?.symbol?.toUpperCase() ?? "")}`}
       </Text>
 
-      {buying && <Row icon="credit-card" title={method?.label ?? "Add a payment method"} subtitle="Payment method" onPress={() => navigation.navigate("PaymentMethods")} />}
+      {buying && <Row icon="credit-card" title={defaultMethod?.label ?? "Add a payment method"} subtitle="Payment method" onPress={() => navigation.navigate("PaymentMethods")} />}
 
     </Screen>
   );

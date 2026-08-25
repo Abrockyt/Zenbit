@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, View, Text, Pressable } from "react-native";
+import { useState } from "react";
+import { View, Text, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, Header, Button, TextField, Row, Sheet, EmptyState, Banner, colors, spacing, fonts } from "../../ui/kit";
+import { Screen, Header, Button, TextField, Row, Sheet, EmptyState, Banner, Spinner, colors, spacing, fonts } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 
 // Luhn check, so an obviously fake number is rejected before it can be
@@ -49,21 +49,6 @@ function formatCard(raw, groups, maxDigits) {
 // scanning twice doesn't always link the exact same fake identity — same
 // spirit as ScanQrScreen's simulated wallet address.
 const UPI_HANDLES = ["alex.rivera@okhdfcbank", "alex.rivera@oksbi", "alexr@ybl", "alex.rivera@okaxis"];
-
-function ScanSpinner() {
-  const spin = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 900, easing: Easing.linear, useNativeDriver: true }));
-    loop.start();
-    return () => loop.stop();
-  }, []);
-  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
-  return (
-    <Animated.View style={{ transform: [{ rotate }] }}>
-      <Feather name="loader" size={30} color={colors.up} />
-    </Animated.View>
-  );
-}
 
 export default function PaymentMethodsScreen({ navigation }) {
   const { state, dispatch } = useApp();
@@ -199,7 +184,7 @@ export default function PaymentMethodsScreen({ navigation }) {
             <View style={{ aspectRatio: 1.4, borderRadius: 20, backgroundColor: colors.ink2, borderWidth: 1, borderColor: scanning ? colors.up : colors.borderDefault, alignItems: "center", justifyContent: "center", marginBottom: spacing.lg }}>
               {scanning ? (
                 <>
-                  <ScanSpinner />
+                  <Spinner size={30} />
                   <Text style={{ color: colors.up, fontSize: 12.5, fontFamily: fonts.medium, marginTop: 10 }}>Reading code…</Text>
                 </>
               ) : (
