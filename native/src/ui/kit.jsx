@@ -470,7 +470,15 @@ function SheetBody({ title, children }) {
       <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFillObject} />
       <View style={styles.sheetHandle} />
       {title ? <Text style={styles.sheetTitle}>{title}</Text> : null}
-      {children}
+      {/* maxHeight + overflow:hidden on the sheet clips anything past 75% of
+          the screen instead of scrolling it — content that runs long
+          (a card form plus its errors, a QR scanner plus its copy) was
+          silently losing its bottom half, buttons included. Scrollable by
+          default now; keyboardShouldPersistTaps so a tap on a button below
+          the fold isn't eaten by the scroll view dismissing the keyboard first. */}
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {children}
+      </ScrollView>
     </Animated.View>
   );
 }

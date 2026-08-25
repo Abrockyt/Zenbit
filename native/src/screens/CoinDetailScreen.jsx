@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, StyleSheet, View, Text, Image, Pressable, ScrollView } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
 import { Screen, Button, IconButton, Skeleton, Avatar, colors, spacing, radius, fonts } from "../ui/kit";
 import CandlestickChart from "../ui/CandlestickChart";
 import { useCoinDetail, useCoinOHLC, useCoinVolume, useCoinTickers } from "../data/useCoinGecko";
@@ -114,12 +115,20 @@ export default function CoinDetailScreen({ navigation, route }) {
   const [indicator, setIndicator] = useState("MA");
   const [bottomTab, setBottomTab] = useState("Markets");
 
+  // Every coin ever opened keeps its own polling cache entry alive for the
+  // rest of the session (native-stack never unmounts a visited screen), so
+  // the fast poll is gated to only the coin currently on screen — otherwise
+  // browsing through several coins in one session leaves all of them
+  // polling in the background forever, which is the real reason this feed
+  // kept looking rate-limited.
+  const isFocused = useIsFocused();
+
   const watched = state.watchlist.includes(id);
   const hasAlert = state.priceAlerts.some((a) => a.coinId === id);
-  const { data: coin, loading, error, refetch } = useCoinDetail(id);
-  const { data: candles, error: candlesError, refetch: refetchCandles } = useCoinOHLC(id, range.days);
-  const { data: volumes } = useCoinVolume(id, range.days);
-  const { data: tickers, loading: tickersLoading } = useCoinTickers(id);
+  const { data: coin, loading, error, refetch } = useCoinDetail(id, isFocused);
+  const { data: candles, error: candlesError, refetch: refetchCandles } = useCoinOHLC(id, range.days, isFocused);
+  const { data: volumes } = useCoinVolume(id, range.days, isFocused);
+  const { data: tickers, loading: tickersLoading } = useCoinTickers(id, isFocused);
 
   const md = coin?.market_data;
   const price = md?.current_price?.usd;

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Real CoinGecko public API — no key required for these endpoints, rate
 // limited to roughly 10-30 calls/min on the free tier.
@@ -17,32 +18,90 @@ const BASE = "https://api.coingecko.com/api/v3";
 const DEFAULT_IDS = "bitcoin,ethereum,solana,tether,usd-coin,chainlink,dogecoin,tron,ripple,stellar";
 const POLL_MS = 60_000;
 
+// Every request funnels through here, one at a time with a floor between
+// them. Several screens can mount in the same tick (Home + Market + a modal
+// all requesting on first paint) and firing them all at once is exactly the
+// kind of burst that trips a free rate limit even when the steady-state
+// polling rate is well within it. Serialising with a gap smooths that out.
+const REQUEST_GAP_MS = 350;
+let queueTail = Promise.resolve();
+function enqueue(fn) {
+  const run = () => new Promise((resolve) => setTimeout(() => resolve(fn()), REQUEST_GAP_MS));
+  const result = queueTail.then(run, run);
+  queueTail = result.catch(() => {});
+  return result;
+}
+
 async function getJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`CoinGecko request failed (${res.status})`);
-  return res.json();
+  return enqueue(async () => {
+    const res = await fetch(url);
+    if (res.status === 429) {
+      const err = new Error("CoinGecko rate limit (429)");
+      err.status = 429;
+      throw err;
+    }
+    if (!res.ok) throw new Error(`CoinGecko request failed (${res.status})`);
+    return res.json();
+  });
+}
+
+// Last-known-good data survives an app restart, keyed by request. A cold
+// start that immediately hits a rate limit (common right after heavy
+// testing) then shows real, if slightly stale, numbers instead of an empty
+// screen — same principle as "showing last known values" mid-session, just
+// extended across restarts.
+const PERSIST_PREFIX = "zenbit-pro:cache:";
+async function loadPersisted(key) {
+  try {
+    const raw = await AsyncStorage.getItem(PERSIST_PREFIX + key);
+    return raw ? JSON.parse(raw) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function savePersisted(key, data) {
+  AsyncStorage.setItem(PERSIST_PREFIX + key, JSON.stringify(data)).catch(() => {});
 }
 
 // key -> { data, error, subscribers: Set<fn>, timer, inFlight }
 const cache = new Map();
 
-function subscribe(key, loader, onUpdate, intervalMs = POLL_MS) {
+function subscribe(key, loader, onUpdate, intervalMs = POLL_MS, persist = false) {
   let entry = cache.get(key);
   if (!entry) {
-    entry = { data: undefined, error: null, subscribers: new Set(), timer: null, inFlight: null, intervalMs };
+    entry = { data: undefined, error: null, subscribers: new Set(), timer: null, inFlight: null, intervalMs, backoffMs: 0 };
     cache.set(key, entry);
+    if (persist) {
+      loadPersisted(key).then((cached) => {
+        if (cached !== undefined && entry.data === undefined) {
+          entry.data = cached;
+          entry.subscribers.forEach((fn) => fn());
+        }
+      });
+    }
   }
   entry.subscribers.add(onUpdate);
 
   const run = () => {
     if (entry.inFlight) return entry.inFlight;
+    // Back off after a rate limit instead of hammering the same wall on the
+    // next fixed tick — each consecutive 429 doubles the wait, capped at 4
+    // minutes, and any success resets it back to the normal cadence.
+    if (entry.backoffUntil && Date.now() < entry.backoffUntil) return Promise.resolve();
     entry.inFlight = loader()
       .then((data) => {
         entry.data = data;
         entry.error = null;
+        entry.backoffMs = 0;
+        entry.backoffUntil = 0;
+        if (persist) savePersisted(key, data);
       })
       .catch((err) => {
         entry.error = err.message;
+        if (err.status === 429) {
+          entry.backoffMs = Math.min((entry.backoffMs || entry.intervalMs) * 2, 240_000);
+          entry.backoffUntil = Date.now() + entry.backoffMs;
+        }
       })
       .finally(() => {
         entry.inFlight = null;
@@ -61,10 +120,16 @@ function subscribe(key, loader, onUpdate, intervalMs = POLL_MS) {
   // for a faster cadence than the default background poll — the fastest
   // request among current subscribers wins, and the timer is restarted at
   // that rate.
-  if (!entry.timer) {
+  // Infinity means "don't actively poll this" — used when the screen asking
+  // isn't focused right now (see CoinDetailScreen). Every visited coin gets
+  // its own cache key and native-stack never unmounts a screen, so without
+  // this, every coin detail page you've ever opened in a session would keep
+  // polling every 20s forever in the background — a much bigger source of
+  // rate-limiting than any single screen's own request rate.
+  if (!entry.timer && Number.isFinite(intervalMs)) {
     entry.intervalMs = intervalMs;
     entry.timer = setInterval(run, entry.intervalMs);
-  } else if (intervalMs < entry.intervalMs) {
+  } else if (entry.timer && intervalMs < entry.intervalMs) {
     entry.intervalMs = intervalMs;
     clearInterval(entry.timer);
     entry.timer = setInterval(run, entry.intervalMs);
@@ -87,16 +152,18 @@ function subscribe(key, loader, onUpdate, intervalMs = POLL_MS) {
   };
 }
 
-function useShared(key, loader, intervalMs) {
+function useShared(key, loader, intervalMs, persist = false) {
   const [, setTick] = useState(0);
-  useEffect(() => subscribe(key, loader, () => setTick((t) => t + 1), intervalMs), [key, intervalMs]);
+  useEffect(() => subscribe(key, loader, () => setTick((t) => t + 1), intervalMs, persist), [key, intervalMs, persist]);
 
-  // Clears the stored error and refires immediately, so a "Retry" control
-  // actually retries rather than just re-rendering the same failed state.
+  // Clears the stored error and any rate-limit backoff, then refires
+  // immediately — a person tapping "Try again" is explicitly asking to
+  // ignore the backoff, not wait out the rest of it.
   const refetch = useCallback(() => {
     const e = cache.get(key);
     if (!e) return;
     e.error = null;
+    e.backoffUntil = 0;
     e.subscribers.forEach((fn) => fn());
     e.run?.();
   }, [key]);
@@ -113,8 +180,14 @@ function useShared(key, loader, intervalMs) {
 export function useMarkets(ids, { vs = "usd", perPage = 100 } = {}) {
   const idParam = ids ? (Array.isArray(ids) ? ids.join(",") : ids) : DEFAULT_IDS;
   const key = `markets:${idParam}:${vs}:${perPage}`;
-  const { data, loading, error, refetch } = useShared(key, () =>
-    getJSON(`${BASE}/coins/markets?vs_currency=${vs}&ids=${idParam}&order=market_cap_desc&per_page=${perPage}&page=1&sparkline=true&price_change_percentage=24h`)
+  // Persisted: this is the list Home and Market open on, so a cold start
+  // that immediately hits a rate limit still shows real (if a little
+  // stale) prices instead of a blank list.
+  const { data, loading, error, refetch } = useShared(
+    key,
+    () => getJSON(`${BASE}/coins/markets?vs_currency=${vs}&ids=${idParam}&order=market_cap_desc&per_page=${perPage}&page=1&sparkline=true&price_change_percentage=24h`),
+    undefined,
+    true
   );
   return { data: data ?? [], loading, error, refetch };
 }
@@ -128,12 +201,15 @@ export function useMarkets(ids, { vs = "usd", perPage = 100 } = {}) {
 // "couldn't load" errors, which is worse than a slightly slower tick.
 const LIVE_POLL_MS = 20_000;
 
-export function useCoinDetail(id) {
+// `focused` gates the fast poll to only the coin detail screen the person
+// is actually looking at right now (see the Infinity note on the timer
+// setup above) — pass false while the screen is backgrounded.
+export function useCoinDetail(id, focused = true) {
   const key = id ? `detail:${id}` : null;
   const { data, loading, error, refetch } = useShared(
     key ?? "detail:none",
     () => getJSON(`${BASE}/coins/${id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`),
-    LIVE_POLL_MS
+    focused ? LIVE_POLL_MS : Infinity
   );
   if (!id) return { data: null, loading: false, error: null, refetch };
   return { data, loading, error, refetch };
@@ -186,13 +262,14 @@ export function useCoinChart(id, days = 7) {
 // Built on the same shared/polling cache as the live price (useShared),
 // so the chart re-fetches every POLL_MS instead of loading once and going
 // stale while the price above it keeps ticking.
-export function useCoinOHLC(id, days = 1) {
+export function useCoinOHLC(id, days = 1, focused = true) {
   const key = id ? `ohlc:${id}:${days}` : null;
   const { data, loading, error, refetch } = useShared(
     key ?? "ohlc:none",
     () => getJSON(`${BASE}/coins/${id}/ohlc?vs_currency=usd&days=${days}`).then(
       (json) => (json || []).map(([t, open, high, low, close]) => ({ t, open, high, low, close }))
-    )
+    ),
+    focused ? POLL_MS : Infinity
   );
   if (!id) return { data: [], loading: false, error: null };
   return { data: data ?? [], loading, error, refetch };
@@ -204,13 +281,14 @@ export function useCoinOHLC(id, days = 1) {
 // Returned alongside its timestamps so the chart can align volume bars to
 // candles by time rather than assuming both series have the same length
 // (they don't — the two endpoints bucket differently).
-export function useCoinVolume(id, days = 1) {
+export function useCoinVolume(id, days = 1, focused = true) {
   const key = id ? `vol:${id}:${days}` : null;
   const { data, loading, error, refetch } = useShared(
     key ?? "vol:none",
     () => getJSON(`${BASE}/coins/${id}/market_chart?vs_currency=usd&days=${days}`).then(
       (json) => (json.total_volumes || []).map(([t, v]) => ({ t, v }))
-    )
+    ),
+    focused ? POLL_MS : Infinity
   );
   if (!id) return { data: [], loading: false, error: null };
   return { data: data ?? [], loading, error, refetch };
@@ -221,13 +299,14 @@ export function useCoinVolume(id, days = 1) {
 // tier has no live order-book endpoint, so rather than inventing bids and
 // asks, the section shows the real venues trading this pair and their real
 // quoted prices and spreads.
-export function useCoinTickers(id) {
+export function useCoinTickers(id, focused = true) {
   const key = id ? `tickers:${id}` : null;
   const { data, loading, error, refetch } = useShared(
     key ?? "tickers:none",
     () => getJSON(`${BASE}/coins/${id}/tickers?include_exchange_logo=true&depth=true`).then(
       (json) => (json.tickers || []).slice(0, 25)
-    )
+    ),
+    focused ? POLL_MS : Infinity
   );
   if (!id) return { data: [], loading: false, error: null };
   return { data: data ?? [], loading, error, refetch };

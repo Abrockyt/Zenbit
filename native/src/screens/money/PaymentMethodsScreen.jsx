@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, Text } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Easing, View, Text, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Screen, Header, Button, TextField, Row, Sheet, EmptyState, Banner, colors, spacing, fonts } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
@@ -45,14 +45,36 @@ function formatCard(raw, groups, maxDigits) {
   return out.join(" ");
 }
 
+// A few plausible real-looking UPI handles a "scan" resolves to, so
+// scanning twice doesn't always link the exact same fake identity — same
+// spirit as ScanQrScreen's simulated wallet address.
+const UPI_HANDLES = ["alex.rivera@okhdfcbank", "alex.rivera@oksbi", "alexr@ybl", "alex.rivera@okaxis"];
+
+function ScanSpinner() {
+  const spin = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 900, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, []);
+  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
+  return (
+    <Animated.View style={{ transform: [{ rotate }] }}>
+      <Feather name="loader" size={30} color={colors.up} />
+    </Animated.View>
+  );
+}
+
 export default function PaymentMethodsScreen({ navigation }) {
   const { state, dispatch } = useApp();
   const toast = useToast();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState("card"); // "card" | "qr"
   const [number, setNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvc, setCvc] = useState("");
   const [touched, setTouched] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const digits = number.replace(/\D/g, "");
   const brand = brandOf(number);
@@ -71,8 +93,8 @@ export default function PaymentMethodsScreen({ navigation }) {
   const showExpiryErr = (touched || expiry.length === 5) && !expiryOk && expiry.length > 0;
   const showCvcErr = (touched || cvc.length >= rules.cvcLen) && !cvcOk && cvc.length > 0;
 
-  const reset = () => { setNumber(""); setExpiry(""); setCvc(""); setTouched(false); };
-  const close = () => { setOpen(false); reset(); };
+  const reset = () => { setNumber(""); setExpiry(""); setCvc(""); setTouched(false); setScanning(false); };
+  const close = () => { setOpen(false); setMode("card"); reset(); };
 
   const add = () => {
     setTouched(true);
@@ -80,6 +102,19 @@ export default function PaymentMethodsScreen({ navigation }) {
     dispatch({ type: "payment/add", method: { id: `pm${Date.now()}`, label: `${brand} •• ${digits.slice(-4)}`, brand, last4: digits.slice(-4), expiry } });
     setOpen(false); reset();
     toast(`${brand} ending ${digits.slice(-4)} linked.`);
+  };
+
+  // Simulated, same honesty as ScanQrScreen — no camera permission is ever
+  // requested. A short "scanning" beat before it resolves is what makes it
+  // read as a real scan instead of a button that just adds a row.
+  const scanQr = () => {
+    setScanning(true);
+    setTimeout(() => {
+      const handle = UPI_HANDLES[Math.floor(Math.random() * UPI_HANDLES.length)];
+      dispatch({ type: "payment/add", method: { id: `pm${Date.now()}`, label: `UPI •• ${handle}`, brand: "UPI", last4: "", expiry: "" } });
+      setOpen(false); reset();
+      toast(`Linked ${handle}.`);
+    }, 1100);
   };
 
   return (
@@ -92,9 +127,9 @@ export default function PaymentMethodsScreen({ navigation }) {
         state.paymentMethods.map((m, i) => (
           <Row
             key={m.id}
-            icon="credit-card"
+            icon={m.brand === "UPI" ? "smartphone" : "credit-card"}
             title={m.label}
-            subtitle={`Expires ${m.expiry}${i === 0 ? " · default" : ""}`}
+            subtitle={`${m.expiry ? `Expires ${m.expiry}` : "Linked via QR"}${i === 0 ? " · default" : ""}`}
             right={<Text onPress={() => { dispatch({ type: "payment/remove", id: m.id }); toast("Payment method removed."); }} style={{ color: colors.down, fontSize: 13 }}>Remove</Text>}
           />
         ))
@@ -104,45 +139,87 @@ export default function PaymentMethodsScreen({ navigation }) {
         <Banner>This is a demo build — card details are validated locally and never sent anywhere. Don't enter a real card.</Banner>
       </View>
 
-      <Sheet open={open} onClose={close} title="Add a card">
-        <View>
-          <TextField
-            value={number}
-            onChangeText={(v) => setNumber(formatCard(v, rules.groups, rules.maxDigits))}
-            placeholder={brand === "Amex" ? "3782 822463 10005" : "4242 4242 4242 4242"}
-            keyboardType="number-pad"
-          />
-          {/* Live brand read-off, so it's obvious the number is being parsed */}
-          {digits.length >= 2 && (
-            <View style={{ position: "absolute", right: 14, top: 0, bottom: 0, justifyContent: "center", flexDirection: "row", alignItems: "center", gap: 6 }}>
-              {numberOk && <Feather name="check-circle" size={15} color={colors.up} />}
-              <View style={{ backgroundColor: rules.tint, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                <Text style={{ color: "#fff", fontSize: 10, fontFamily: fonts.semibold }}>{brand.toUpperCase()}</Text>
+      <Sheet open={open} onClose={close} title="Add a payment method">
+        <View style={{ flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md }}>
+          <Pressable onPress={() => setMode("card")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 999, backgroundColor: mode === "card" ? colors.surfaceRaised : "transparent", borderWidth: 1, borderColor: mode === "card" ? colors.borderStrong : colors.borderSubtle }}>
+            <Feather name="credit-card" size={14} color={mode === "card" ? colors.textPrimary : colors.textTertiary} />
+            <Text style={{ color: mode === "card" ? colors.textPrimary : colors.textTertiary, fontSize: 13, fontFamily: fonts.medium }}>Card</Text>
+          </Pressable>
+          <Pressable onPress={() => setMode("qr")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 999, backgroundColor: mode === "qr" ? colors.surfaceRaised : "transparent", borderWidth: 1, borderColor: mode === "qr" ? colors.borderStrong : colors.borderSubtle }}>
+            <Feather name="maximize" size={14} color={mode === "qr" ? colors.textPrimary : colors.textTertiary} />
+            <Text style={{ color: mode === "qr" ? colors.textPrimary : colors.textTertiary, fontSize: 13, fontFamily: fonts.medium }}>Scan QR</Text>
+          </Pressable>
+        </View>
+
+        {mode === "card" ? (
+          <>
+            <View>
+              <TextField
+                value={number}
+                onChangeText={(v) => setNumber(formatCard(v, rules.groups, rules.maxDigits))}
+                placeholder={brand === "Amex" ? "3782 822463 10005" : "4242 4242 4242 4242"}
+                keyboardType="number-pad"
+              />
+              {/* Live brand read-off, so it's obvious the number is being parsed */}
+              {digits.length >= 2 && (
+                <View style={{ position: "absolute", right: 14, top: 0, bottom: 0, justifyContent: "center", flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  {numberOk && <Feather name="check-circle" size={15} color={colors.up} />}
+                  <View style={{ backgroundColor: rules.tint, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <Text style={{ color: "#fff", fontSize: 10, fontFamily: fonts.semibold }}>{brand.toUpperCase()}</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+            {showNumberErr && (
+              <Text style={{ color: colors.down, fontSize: 12, marginTop: 6 }}>
+                {numberComplete ? "That card number doesn't check out. Re-read it off the card." : `${brand} numbers are ${rules.maxDigits} digits — ${rules.maxDigits - digits.length} to go.`}
+              </Text>
+            )}
+
+            <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm }}>
+              <View style={{ flex: 1 }}>
+                <TextField value={expiry} onChangeText={(v) => { let x = v.replace(/\D/g, "").slice(0, 4); if (x.length > 2) x = `${x.slice(0, 2)}/${x.slice(2)}`; setExpiry(x); }} placeholder="MM/YY" keyboardType="number-pad" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <TextField value={cvc} onChangeText={(v) => setCvc(v.replace(/\D/g, "").slice(0, rules.cvcLen))} placeholder={rules.cvcLen === 4 ? "CVC (4)" : "CVC"} keyboardType="number-pad" />
               </View>
             </View>
-          )}
-        </View>
-        {showNumberErr && (
-          <Text style={{ color: colors.down, fontSize: 12, marginTop: 6 }}>
-            {numberComplete ? "That card number doesn't check out. Re-read it off the card." : `${brand} numbers are ${rules.maxDigits} digits — ${rules.maxDigits - digits.length} to go.`}
-          </Text>
+            {showExpiryErr && <Text style={{ color: colors.down, fontSize: 12, marginTop: 6 }}>Expiry must be MM/YY and in the future.</Text>}
+            {showCvcErr && <Text style={{ color: colors.down, fontSize: 12, marginTop: 6 }}>{brand} security codes are {rules.cvcLen} digits.</Text>}
+
+            <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
+              <Button onPress={add} disabled={!formOk}>Link card</Button>
+              <Button variant="secondary" onPress={close}>Cancel</Button>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={{ color: colors.textTertiary, fontSize: 12, textAlign: "center", marginBottom: spacing.md }}>Simulated — no camera is used</Text>
+
+            <View style={{ aspectRatio: 1.4, borderRadius: 20, backgroundColor: colors.ink2, borderWidth: 1, borderColor: scanning ? colors.up : colors.borderDefault, alignItems: "center", justifyContent: "center", marginBottom: spacing.lg }}>
+              {scanning ? (
+                <>
+                  <ScanSpinner />
+                  <Text style={{ color: colors.up, fontSize: 12.5, fontFamily: fonts.medium, marginTop: 10 }}>Reading code…</Text>
+                </>
+              ) : (
+                <>
+                  <Feather name="maximize" size={40} color="rgba(255,255,255,0.16)" />
+                  <Text style={{ color: colors.textTertiary, fontSize: 12, marginTop: 10 }}>Point at a bank or UPI QR</Text>
+                </>
+              )}
+            </View>
+
+            <Text style={{ color: colors.textTertiary, fontSize: 12.5, textAlign: "center", marginBottom: spacing.lg, lineHeight: 18 }}>
+              Scan the QR code from your banking app to link it as a funding source — same as tapping "Pay" on a UPI code, without typing anything.
+            </Text>
+
+            <View style={{ gap: spacing.sm }}>
+              <Button onPress={scanQr} loading={scanning}>{scanning ? "Reading code" : "Simulate a scan"}</Button>
+              <Button variant="secondary" onPress={close} disabled={scanning}>Cancel</Button>
+            </View>
+          </>
         )}
-
-        <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm }}>
-          <View style={{ flex: 1 }}>
-            <TextField value={expiry} onChangeText={(v) => { let x = v.replace(/\D/g, "").slice(0, 4); if (x.length > 2) x = `${x.slice(0, 2)}/${x.slice(2)}`; setExpiry(x); }} placeholder="MM/YY" keyboardType="number-pad" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <TextField value={cvc} onChangeText={(v) => setCvc(v.replace(/\D/g, "").slice(0, rules.cvcLen))} placeholder={rules.cvcLen === 4 ? "CVC (4)" : "CVC"} keyboardType="number-pad" />
-          </View>
-        </View>
-        {showExpiryErr && <Text style={{ color: colors.down, fontSize: 12, marginTop: 6 }}>Expiry must be MM/YY and in the future.</Text>}
-        {showCvcErr && <Text style={{ color: colors.down, fontSize: 12, marginTop: 6 }}>{brand} security codes are {rules.cvcLen} digits.</Text>}
-
-        <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
-          <Button onPress={add} disabled={!formOk}>Link card</Button>
-          <Button variant="secondary" onPress={close}>Cancel</Button>
-        </View>
       </Sheet>
     </Screen>
   );
