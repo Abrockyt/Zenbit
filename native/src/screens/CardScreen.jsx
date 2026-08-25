@@ -1,9 +1,22 @@
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Screen, TabBar, IconButton, SectionHeader, Row, Button, Banner, colors, spacing, radius } from "../ui/kit";
 import { account } from "../data/mockWallet";
 import { useApp, useToast } from "../state/store";
 import { formatMoney } from "../lib/format";
+
+// Same icon-circle + label pattern as Home's action row (confirmed against
+// the Card frame 319:205) — not text-label buttons side by side.
+function CardAction({ icon, label, onPress }) {
+  return (
+    <Pressable onPress={onPress} style={{ alignItems: "center", gap: 8, flex: 1 }}>
+      <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" }}>
+        <Feather name={icon} size={19} color={colors.textPrimary} />
+      </View>
+      <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{label}</Text>
+    </Pressable>
+  );
+}
 
 export default function CardScreen({ navigation }) {
   const { state, dispatch } = useApp();
@@ -55,12 +68,15 @@ export default function CardScreen({ navigation }) {
             <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 8 }}>{account.name} · {card.expMonth}/{card.expYear}</Text>
           </View>
 
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.md }}>
-            <Button variant="secondary" onPress={() => navigation.navigate("Buy")}>Top up</Button>
-            <Button variant="secondary" onPress={() => { dispatch({ type: card.frozen ? "card/unfreeze" : "card/freeze" }); toast(card.frozen ? "Card unfrozen." : "Card frozen. Payments will decline."); }}>
-              {card.frozen ? "Unfreeze" : "Freeze"}
-            </Button>
-            <Button variant="secondary" onPress={() => navigation.navigate("CardDetail")}>Details</Button>
+          <View style={{ flexDirection: "row", marginBottom: spacing.md }}>
+            <CardAction icon="plus" label="Top up" onPress={() => navigation.navigate("Buy")} />
+            <CardAction
+              icon={card.frozen ? "unlock" : "lock"}
+              label={card.frozen ? "Unfreeze" : "Freeze"}
+              onPress={() => { dispatch({ type: card.frozen ? "card/unfreeze" : "card/freeze" }); toast(card.frozen ? "Card unfrozen." : "Card frozen. Payments will decline."); }}
+            />
+            <CardAction icon="eye" label="Details" onPress={() => navigation.navigate("CardDetail")} />
+            <CardAction icon="settings" label="Settings" onPress={() => navigation.navigate("Settings")} />
           </View>
 
           {card.frozen && <Banner tone="danger">This card is frozen — payments will be declined until you unfreeze it.</Banner>}

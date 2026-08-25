@@ -1,10 +1,27 @@
 import { useState } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
-import { Screen, TabBar, TextField, Button, Sheet, ResultDialog, Banner, colors, spacing, radius } from "../ui/kit";
+import { View, Text, Pressable, ActivityIndicator, StyleSheet } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import { Screen, TabBar, TextField, Button, Sheet, ResultDialog, Banner, colors, spacing, radius, gradients, fonts } from "../ui/kit";
 import { useMarkets } from "../data/useCoinGecko";
 import { useApp, useToast } from "../state/store";
 
 const PAIR_IDS = ["bitcoin", "ethereum", "solana", "tether", "usd-coin", "chainlink"];
+
+// Glass "You pay / You receive" panels with a floating flip icon between
+// them — confirmed against the real Swap frame (318:158), which is
+// meaningfully different from a flat form: two large blurred cards, a
+// circular direction indicator overlapping both.
+const swapStyles = StyleSheet.create({
+  panel: { padding: 16, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.borderSubtle, overflow: "hidden", gap: 8 },
+  panelLabel: { color: colors.textTertiary, fontSize: 12 },
+  panelSub: { color: colors.textTertiary, fontSize: 12 },
+  receiveAmount: { color: colors.textPrimary, fontSize: 26, fontFamily: fonts.mono },
+  coinPill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.surfaceRaised, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12 },
+  coinPillText: { color: colors.textPrimary, fontSize: 13, fontFamily: fonts.medium },
+  flipButton: { position: "absolute", top: "50%", left: "50%", marginLeft: -18, marginTop: -18, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.ink3, borderWidth: 3, borderColor: colors.surfaceScreen, alignItems: "center", justifyContent: "center", zIndex: 5 },
+});
 
 function KeyValue({ label, value }) {
   return (
@@ -84,16 +101,43 @@ export default function SwapScreen({ navigation }) {
         <Banner tone="danger">Price feed unavailable — we can't quote a swap without live prices right now.</Banner>
       ) : (
         <View>
-          <Pressable onPress={() => setPicking("from")} style={{ padding: 16, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.sm }}>
-            <Text style={{ color: colors.textTertiary, fontSize: 12 }}>You pay · {fromSym.toUpperCase()}</Text>
-            <TextField value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" />
-          </Pressable>
-          <Pressable onPress={() => setPicking("to")} style={{ padding: 16, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.md }}>
-            <Text style={{ color: colors.textTertiary, fontSize: 12 }}>You receive · {toSym.toUpperCase()}</Text>
-            <Text style={{ color: colors.textPrimary, fontSize: 20, marginTop: 6 }}>{receiveAmount ? receiveAmount.toFixed(6) : "0"}</Text>
-          </Pressable>
+          <View style={{ position: "relative" }}>
+            <View style={[swapStyles.panel, { marginBottom: 8 }]}>
+              <BlurView intensity={24} tint="dark" style={StyleSheet.absoluteFillObject} />
+              <LinearGradient colors={gradients.card} style={StyleSheet.absoluteFillObject} />
+              <Text style={swapStyles.panelLabel}>You pay</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <View style={{ flex: 1 }}>
+                  <TextField value={amount} onChangeText={setAmount} keyboardType="decimal-pad" placeholder="0" />
+                </View>
+                <Pressable onPress={() => setPicking("from")} style={swapStyles.coinPill}>
+                  <Text style={swapStyles.coinPillText}>{fromSym.toUpperCase()}</Text>
+                  <Feather name="chevron-down" size={14} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+              <Text style={swapStyles.panelSub}>≈ ${(amountNum * fromPrice).toFixed(2)}</Text>
+            </View>
 
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.md }}>
+            <View style={swapStyles.flipButton}>
+              <Feather name="arrow-down" size={18} color={colors.textPrimary} />
+            </View>
+
+            <View style={[swapStyles.panel, { marginTop: 0 }]}>
+              <BlurView intensity={24} tint="dark" style={StyleSheet.absoluteFillObject} />
+              <LinearGradient colors={gradients.card} style={StyleSheet.absoluteFillObject} />
+              <Text style={swapStyles.panelLabel}>You receive</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Text style={swapStyles.receiveAmount}>{receiveAmount ? receiveAmount.toFixed(6) : "0"}</Text>
+                <Pressable onPress={() => setPicking("to")} style={swapStyles.coinPill}>
+                  <Text style={swapStyles.coinPillText}>{toSym.toUpperCase()}</Text>
+                  <Feather name="chevron-down" size={14} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+              <Text style={swapStyles.panelSub}>≈ ${(receiveAmount * toPrice).toFixed(2)}</Text>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: spacing.md, marginBottom: spacing.md }}>
             <Text style={{ color: colors.textTertiary, fontSize: 12 }}>Available {availableUnits.toLocaleString("en-US", { maximumFractionDigits: 6 })} {fromSym.toUpperCase()}</Text>
             {fromHolding && <Text onPress={() => setAmount(String(Math.floor(availableUnits * fromPrice * 100) / 100))} style={{ color: colors.up, fontSize: 12 }}>Max</Text>}
           </View>

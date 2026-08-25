@@ -419,10 +419,13 @@ const styles = StyleSheet.create({
 
   card: { borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderSubtle, padding: spacing.lg, overflow: "hidden" },
 
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: colors.surfaceRaised, marginRight: 8 },
-  chipActive: { backgroundColor: colors.up },
-  chipLabel: { color: colors.textSecondary, fontSize: 13, fontFamily: fonts.medium },
-  chipLabelActive: { color: "#03150c" },
+  // Filter chips on Market are subtle outlines, not green fills — active
+  // just gets a faint white fill + stronger border, confirmed against the
+  // Market frame (311:181-188).
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.borderSubtle, marginRight: 8 },
+  chipActive: { backgroundColor: colors.surfaceRaised, borderColor: colors.borderDefault },
+  chipLabel: { color: colors.textTertiary, fontSize: 12.5, fontFamily: fonts.medium },
+  chipLabelActive: { color: colors.textPrimary },
 
   segment: { flexDirection: "row", backgroundColor: colors.surfaceRaised, borderRadius: radius.md, padding: 3 },
   segmentItem: { flex: 1, paddingVertical: 9, alignItems: "center", borderRadius: radius.sm - 2 },
