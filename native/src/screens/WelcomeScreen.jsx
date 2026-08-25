@@ -9,8 +9,6 @@ import { LinearGradient } from "expo-linear-gradient";
  * pass, so this is a flat gradient instead. Everything else — copy, layout,
  * the two actions — is the same screen.
  *
- * Sign-up / login aren't ported yet, so both buttons go straight to Home for
- * now. That's a placeholder, not a finished flow.
  */
 export default function WelcomeScreen({ navigation }) {
   return (
@@ -30,10 +28,10 @@ export default function WelcomeScreen({ navigation }) {
             <View style={styles.dot} />
           </View>
 
-          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate("Home")}>
+          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate("SignUp")}>
             <Text style={styles.primaryButtonText}>Get started</Text>
           </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate("Home")}>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate("Login")}>
             <Text style={styles.secondaryButtonText}>I already have an account</Text>
           </Pressable>
         </View>

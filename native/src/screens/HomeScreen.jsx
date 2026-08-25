@@ -1,19 +1,16 @@
 import { useMemo } from "react";
-import { View, Text, StyleSheet, SafeAreaView, FlatList, RefreshControl } from "react-native";
+import { View, Text, FlatList } from "react-native";
+import { Screen, TabBar, PriceRow, IconButton, colors, spacing } from "../ui/kit";
 import { useApp } from "../state/store";
 import { useMarkets } from "../data/useCoinGecko";
 
 /**
- * Ported from src/pages/Home.jsx (web).
- *
- * The web version has a scroll-linked blurring header (Framer Motion +
- * backdrop-filter) and a bunch of glass/liquid effects that don't have an
- * RN equivalent without extra libraries — dropped for this first pass in
- * favour of a plain header. What's real and unchanged: the shared
- * AppContext store, the live useMarkets(...) call against the actual
- * CoinGecko API, and the same balance-from-holdings math as the web app.
+ * Ported from src/pages/Home.jsx (web). Dropped the scroll-linked blurring
+ * header (Framer Motion + backdrop-filter, no direct RN equivalent) for a
+ * plain header. Everything else is real: shared AppContext state, live
+ * useMarkets(...) against the actual CoinGecko API, same balance math.
  */
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const { state } = useApp();
   const user = state.session.user;
   const holdings = state.wallet.holdings;
@@ -21,80 +18,41 @@ export default function HomeScreen() {
   const { data: markets, loading, error } = useMarkets(null, { vs: "usd" });
 
   const priced = useMemo(
-    () =>
-      holdings.map((h) => {
-        const m = markets?.find((x) => x.id === h.id);
-        const price = m?.current_price ?? 0;
-        return { ...h, price, value: price * h.units, changePct: m?.price_change_percentage_24h ?? 0 };
-      }),
+    () => holdings.map((h) => {
+      const m = markets?.find((x) => x.id === h.id);
+      const price = m?.current_price ?? 0;
+      return { ...h, price, value: price * h.units, changePct: m?.price_change_percentage_24h ?? 0, image: m?.image };
+    }),
     [holdings, markets]
   );
-
   const total = priced.reduce((s, h) => s + h.value, 0);
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>
+    <Screen scroll={false} footer={<TabBar navigation={navigation} active="Home" />}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingBottom: spacing.md }}>
+        <Text style={{ color: colors.textPrimary, fontSize: 15, fontWeight: "500" }}>
           {user?.name ? user.name.split(" ")[0].toLowerCase() : "user"}crypto
         </Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <IconButton icon="bell" onPress={() => navigation.navigate("RecentActivity")} badge={state.wallet.transactions.some((t) => t.status === "pending")} />
+          <IconButton icon="search" onPress={() => navigation.navigate("Market")} />
+        </View>
       </View>
 
-      <View style={styles.balanceBlock}>
-        <Text style={styles.balanceLabel}>Total balance</Text>
-        <Text style={styles.balanceValue}>
-          {total ? `$${total.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—"}
-        </Text>
-        {error && <Text style={styles.errorText}>Couldn't refresh prices — showing last known values.</Text>}
-        {loading && !markets?.length && <Text style={styles.loadingText}>Loading live prices…</Text>}
-      </View>
+      <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Total balance</Text>
+      <Text style={{ color: colors.textPrimary, fontSize: 34, fontWeight: "700", marginTop: 4, marginBottom: spacing.lg }}>
+        {total ? `$${total.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—"}
+      </Text>
+      {error && <Text style={{ color: colors.down, fontSize: 12, marginBottom: spacing.sm }}>Couldn't refresh prices — showing last known values.</Text>}
+      {loading && !markets?.length && <Text style={{ color: colors.textTertiary, fontSize: 12, marginBottom: spacing.sm }}>Loading live prices…</Text>}
 
       <FlatList
         data={priced}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={() => {}} tintColor="#3ADE7E" />}
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <View>
-              <Text style={styles.rowName}>{item.name}</Text>
-              <Text style={styles.rowUnits}>{item.units} {item.symbol.toUpperCase()}</Text>
-            </View>
-            <View style={styles.rowRight}>
-              <Text style={styles.rowValue}>${item.value.toLocaleString("en-US", { maximumFractionDigits: 2 })}</Text>
-              <Text style={[styles.rowChange, item.changePct >= 0 ? styles.positive : styles.negative]}>
-                {item.changePct >= 0 ? "+" : ""}{item.changePct.toFixed(2)}%
-              </Text>
-            </View>
-          </View>
+          <PriceRow symbol={item.symbol} name={item.name} price={item.price} changePct={item.changePct} holding={`${item.units} ${item.symbol.toUpperCase()}`} iconUrl={item.image} onPress={() => navigation.navigate("CoinDetail", { id: item.id })} />
         )}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#050a08" },
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
-  greeting: { color: "#fff", fontSize: 15, fontWeight: "500" },
-  balanceBlock: { paddingHorizontal: 20, paddingBottom: 16 },
-  balanceLabel: { color: "rgba(255,255,255,0.5)", fontSize: 13 },
-  balanceValue: { color: "#fff", fontSize: 34, fontWeight: "700", marginTop: 4 },
-  errorText: { color: "#e2725b", fontSize: 12, marginTop: 6 },
-  loadingText: { color: "rgba(255,255,255,0.4)", fontSize: 12, marginTop: 6 },
-  list: { paddingHorizontal: 20, paddingBottom: 40 },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.08)",
-  },
-  rowName: { color: "#fff", fontSize: 15, fontWeight: "500" },
-  rowUnits: { color: "rgba(255,255,255,0.45)", fontSize: 12, marginTop: 2 },
-  rowRight: { alignItems: "flex-end" },
-  rowValue: { color: "#fff", fontSize: 15, fontWeight: "500" },
-  rowChange: { fontSize: 12, marginTop: 2 },
-  positive: { color: "#3ADE7E" },
-  negative: { color: "#e2725b" },
-});
