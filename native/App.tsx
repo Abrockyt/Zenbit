@@ -112,9 +112,15 @@ export default function App() {
         <Stack.Navigator
           screenOptions={{
             headerShown: false,
-            animation: "slide_from_right",
+            // Omitting `animation` (rather than forcing "slide_from_right")
+            // is what actually gets the real OS transition — on iOS that's
+            // the literal UINavigationController push, hardware-driven and
+            // interruptible by the gesture, not a JS-timed approximation of
+            // it. Edge-only swipe-back (fullScreenGestureEnabled: false) is
+            // also the real default; full-screen swipe is an opt-in a few
+            // apps use, not what "Apple's own animation" actually looks like.
             gestureEnabled: true,
-            fullScreenGestureEnabled: true,
+            fullScreenGestureEnabled: false,
           }}
         >
           <Stack.Screen name="Welcome" component={WelcomeScreen} />

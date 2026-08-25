@@ -226,22 +226,27 @@ export function SectionHeader({ title, action, onAction }) {
   );
 }
 
+// No entering animation here — these render immediately on screen mount as
+// part of the initial content, so a fade-in on top of the native push
+// transition just compounds into two animations running at once instead of
+// one clean one. (ResultDialog's fade stays: it appears from setState after
+// a user action, not during navigation, so it doesn't fight anything.)
 export function EmptyState({ icon = "inbox", title, body }) {
   return (
-    <Animated.View entering={FadeInDown.duration(300)} style={styles.empty}>
+    <View style={styles.empty}>
       <Feather name={icon} size={28} color={colors.textTertiary} />
       <Text style={styles.emptyTitle}>{title}</Text>
       {body ? <Text style={styles.emptyBody}>{body}</Text> : null}
-    </Animated.View>
+    </View>
   );
 }
 
 export function Banner({ tone = "info", children }) {
   const toneColor = tone === "danger" ? colors.down : tone === "warn" ? colors.warn : colors.info;
   return (
-    <Animated.View entering={FadeIn.duration(220)} style={[styles.banner, { borderColor: toneColor + "55", backgroundColor: toneColor + "14" }]}>
+    <View style={[styles.banner, { borderColor: toneColor + "55", backgroundColor: toneColor + "14" }]}>
       <Text style={[styles.bannerText, { color: toneColor }]}>{children}</Text>
-    </Animated.View>
+    </View>
   );
 }
 
