@@ -19,6 +19,7 @@ export default function ThreadsScreen({ navigation }) {
         <EmptyState icon="message-circle" title="No conversations yet" body="Message someone from their profile to start a thread." />
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={threads}
           keyExtractor={(t) => t.id}
           renderItem={({ item: t }) => {

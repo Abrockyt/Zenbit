@@ -21,6 +21,7 @@ export default function AiChatScreen({ navigation }) {
     <Screen scroll={false}>
       <Header title="Zen AI" onBack={() => navigation.goBack()} />
       <FlatList
+        style={{ flex: 1 }}
         data={messages}
         keyExtractor={(m) => String(m.id)}
         contentContainerStyle={{ gap: 10, paddingBottom: spacing.md }}

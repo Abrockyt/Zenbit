@@ -61,7 +61,7 @@ export default function FeedScreen({ navigation }) {
       {posts.length === 0 ? (
         <EmptyState icon="users" title="No posts" body="Nobody you follow has posted, or the feed is empty." />
       ) : (
-        <FlatList data={posts} keyExtractor={(p) => p.id} renderItem={({ item: p }) => (
+        <FlatList style={{ flex: 1 }} data={posts} keyExtractor={(p) => p.id} renderItem={({ item: p }) => (
           <PostRow post={p} onLike={() => dispatch({ type: "social/toggleLike", id: p.id })} onOpen={() => navigation.navigate("PostDetail", { id: p.id })} onOverflow={() => setSheetFor(p)} />
         )} />
       )}

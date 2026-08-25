@@ -40,6 +40,7 @@ export default function MarketScreen({ navigation }) {
           <EmptyState icon="search" title="No results" body={`Nothing matches "${query}".`} />
         ) : (
           <FlatList
+            style={{ flex: 1 }}
             data={searchResults.slice(0, 12)}
             keyExtractor={(c) => c.id}
             renderItem={({ item: c }) => <PriceRow symbol={c.symbol} name={c.name} iconUrl={c.large} price={0} changePct={0} holding=" " onPress={() => navigation.navigate("CoinDetail", { id: c.id })} />}
@@ -49,6 +50,7 @@ export default function MarketScreen({ navigation }) {
         <Text style={{ color: colors.textTertiary, fontSize: 13, marginTop: spacing.md }}>Loading…</Text>
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={rows}
           keyExtractor={(c) => c.id}
           renderItem={({ item: c }) => (

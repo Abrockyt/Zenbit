@@ -6,6 +6,7 @@ import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeInDown, SlideInDown, useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
 import { colors, spacing, radius, gradients, fonts, shadow } from "../theme";
+import RadialBackground from "./RadialBackground";
 
 /**
  * Shared RN UI kit — visual pass two.
@@ -30,17 +31,21 @@ function usePressScale(to = 0.96) {
   return { style, onPressIn, onPressOut };
 }
 
+// No per-screen entrance animation here on purpose — React Navigation's
+// native-stack already drives the real iOS/Android push transition and
+// swipe-back gesture (see App.tsx screenOptions). A second fade wrapped
+// around every screen's content fought that native transition and made
+// navigation feel janky; the background/gradient can stay static underneath
+// the native animation without conflicting with it.
 export function Screen({ children, scroll = true, style, footer }) {
   const Wrap = scroll ? ScrollView : View;
   return (
     <View style={[styles.screen, style]}>
-      <LinearGradient colors={gradients.screen} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.6 }} style={StyleSheet.absoluteFill} />
+      <RadialBackground />
       <SafeAreaView style={{ flex: 1 }}>
-        <Animated.View entering={FadeIn.duration(260)} style={{ flex: 1 }}>
-          <Wrap contentContainerStyle={scroll ? styles.scrollBody : styles.body} style={scroll ? { flex: 1 } : styles.body}>
-            {children}
-          </Wrap>
-        </Animated.View>
+        <Wrap contentContainerStyle={scroll ? styles.scrollBody : styles.body} style={scroll ? { flex: 1 } : styles.body}>
+          {children}
+        </Wrap>
         {footer}
       </SafeAreaView>
     </View>
@@ -374,7 +379,7 @@ export function ResultDialog({ tone = "success", title, message, primaryLabel, o
   );
 }
 
-export { colors, spacing, radius };
+export { colors, spacing, radius, gradients, fonts, shadow };
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surfaceScreen },

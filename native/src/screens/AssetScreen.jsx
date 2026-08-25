@@ -29,6 +29,7 @@ export default function AssetScreen({ navigation }) {
         <EmptyState icon="briefcase" title="Nothing yet" body="Buy or receive your first asset to see it here." />
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={priced}
           keyExtractor={(h) => h.id}
           renderItem={({ item: h }) => (

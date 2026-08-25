@@ -16,6 +16,7 @@ export default function WatchlistScreen({ navigation }) {
         <EmptyState icon="star" title="No coins pinned" body="Pin a coin on its detail page to track it here." />
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={markets}
           keyExtractor={(c) => c.id}
           renderItem={({ item: c }) => (
