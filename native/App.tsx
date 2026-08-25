@@ -87,8 +87,16 @@ const Stack = createNativeStackNavigator();
  * Buy and Sell both point at TradeFlowScreen (route.name picks the mode),
  * same as the web version's Buy.jsx/Sell.jsx wrapping one TradeFlow.
  */
+// Custom fonts are fetched as separate assets over the network (part of
+// the EAS Update bundle, not the JS bundle itself). Blocking the entire
+// app's first render on that fetch — `if (!fontsLoaded) return null` —
+// meant any network hiccup or CDN delay left the screen permanently blank,
+// which is exactly what happened. Fonts now load in the background instead:
+// text renders with the system font immediately and swaps to Hanken
+// Grotesk/Geist Mono/Chakra Petch whenever loading finishes, same pattern
+// as how a real iOS app never blocks its UI on a remote asset fetch.
 export default function App() {
-  const [fontsLoaded] = useFonts({
+  useFonts({
     HankenGrotesk_400Regular,
     HankenGrotesk_500Medium,
     HankenGrotesk_600SemiBold,
@@ -99,10 +107,16 @@ export default function App() {
   });
 
   const onLayout = useCallback(() => {
-    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
-  }, [fontsLoaded]);
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
 
-  if (!fontsLoaded) return null;
+  // Belt-and-suspenders: hide the splash screen after 3s regardless of
+  // whether onLayout fired, so nothing can strand the app on a blank/splash
+  // screen indefinitely.
+  useEffect(() => {
+    const t = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 3000);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <SafeAreaProvider>
