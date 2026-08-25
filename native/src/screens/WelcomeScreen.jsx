@@ -1,4 +1,5 @@
-import { View, Text, Pressable, StyleSheet, SafeAreaView } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { View, Text, Pressable, StyleSheet, SafeAreaView, Animated, Dimensions } from "react-native";
 import { WebView } from "react-native-webview";
 import { LinearGradient } from "expo-linear-gradient";
 import RadialBackground from "../ui/RadialBackground";
@@ -8,32 +9,77 @@ import { colors, fonts } from "../theme";
 // 3D coin, non-interactive here since it's decorative background, same as
 // on web where the foreground buttons sit in front of it. WebView is the
 // only way to run a Spline scene on RN; there's no native Spline runtime.
+//
+// The embedded Spline page renders its scene into a viewport shorter than
+// the phone's screen, which left a flat seam across the bottom of the coin
+// on real devices. Since that's the third-party page's own layout, not
+// something RN layout can reach into, the WebView is oversized (140% tall)
+// and clipped by the wrapper's overflow:hidden — the seam lands below the
+// visible frame instead of inside it, and the coin also reads bigger.
 const SPLINE_URL = "https://my.spline.design/prismcoin-bUZ2xyGxtROeBvkVK8VdZ5hR/";
 
+const SLIDES = [
+  { title: "Your money, your keys", body: "Hold, buy, swap and spend crypto — all in one app you control." },
+  { title: "Built-in market data", body: "Live prices, real charts and a watchlist that updates in real time." },
+  { title: "One tap to send or spend", body: "Move funds instantly, or spend straight from your wallet with the card." },
+];
+const { width: SCREEN_W } = Dimensions.get("window");
+const AUTO_ADVANCE_MS = 4500;
+
 export default function WelcomeScreen({ navigation }) {
+  const scrollRef = useRef(null);
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const next = (index + 1) % SLIDES.length;
+      scrollRef.current?.scrollTo({ x: next * SCREEN_W, animated: true });
+      setIndex(next);
+    }, AUTO_ADVANCE_MS);
+    return () => clearInterval(timer);
+  }, [index]);
+
+  const onMomentumEnd = (e) => {
+    const next = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
+    setIndex(next);
+  };
+
   return (
     <View style={styles.root}>
       <RadialBackground />
-      <WebView
-        source={{ uri: SPLINE_URL }}
-        style={[styles.spline, { pointerEvents: "none" }]}
-        scrollEnabled={false}
-        androidLayerType="hardware"
-        originWhitelist={["*"]}
-      />
+      <View style={styles.splineClip}>
+        <WebView
+          source={{ uri: SPLINE_URL }}
+          style={[styles.spline, { pointerEvents: "none" }]}
+          scrollEnabled={false}
+          androidLayerType="hardware"
+          originWhitelist={["*"]}
+        />
+      </View>
       <LinearGradient colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.8)", "#000"]} locations={[0, 0.25, 1]} style={styles.scrim} />
       <SafeAreaView style={styles.safe}>
         <View style={styles.spacer} />
         <View style={styles.footer}>
-          <Text style={styles.title}>Your money, your keys</Text>
-          <Text style={styles.body}>
-            Hold, buy, swap and spend crypto — all in one app you control.
-          </Text>
+          <Animated.ScrollView
+            ref={scrollRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={onMomentumEnd}
+            style={{ width: SCREEN_W - 40 }}
+          >
+            {SLIDES.map((s) => (
+              <View key={s.title} style={{ width: SCREEN_W - 40 }}>
+                <Text style={styles.title}>{s.title}</Text>
+                <Text style={styles.body}>{s.body}</Text>
+              </View>
+            ))}
+          </Animated.ScrollView>
 
           <View style={styles.dots}>
-            <View style={[styles.dot, styles.dotActive]} />
-            <View style={styles.dot} />
-            <View style={styles.dot} />
+            {SLIDES.map((s, i) => (
+              <View key={s.title} style={[styles.dot, i === index && styles.dotActive]} />
+            ))}
           </View>
 
           <Pressable style={styles.primaryButton} onPress={() => navigation.navigate("SignUp")}>
@@ -50,7 +96,8 @@ export default function WelcomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000" },
-  spline: { ...StyleSheet.absoluteFillObject, backgroundColor: "transparent" },
+  splineClip: { ...StyleSheet.absoluteFillObject, overflow: "hidden" },
+  spline: { position: "absolute", top: 0, left: 0, right: 0, height: "140%", backgroundColor: "transparent" },
   scrim: { position: "absolute", left: 0, right: 0, bottom: 0, height: "45%" },
   safe: { flex: 1 },
   spacer: { flex: 1 },

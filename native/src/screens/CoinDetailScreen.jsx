@@ -1,18 +1,23 @@
 import { useState } from "react";
 import { View, Text, Image } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, Header, Button, Chip, IconButton, colors, spacing, radius } from "../ui/kit";
-import Sparkline from "../ui/Sparkline";
-import { useCoinDetail, useCoinChart } from "../data/useCoinGecko";
+import { Screen, Header, Button, Chip, IconButton, colors, spacing, radius, fonts } from "../ui/kit";
+import CandlestickChart from "../ui/CandlestickChart";
+import { useCoinDetail, useCoinOHLC } from "../data/useCoinGecko";
 import { useApp, useToast } from "../state/store";
 import { formatPct } from "../lib/format";
 
 /**
- * Ported from src/pages/CoinDetail.jsx (web). The web version also has a
- * fake order book and a "Trading Data" tab of randomly-generated numbers —
- * dropped here rather than ported, since neither is real data and neither
- * was central to the case study. Kept: live price/detail from CoinGecko,
- * the range chart, watchlist toggle, and Buy/Sell.
+ * Ported from src/pages/CoinDetail.jsx (web), redone with a real candlestick
+ * chart (see ui/CandlestickChart.jsx) instead of a plain price line — built
+ * from CoinGecko's actual OHLC series, not synthetic data. The web version
+ * also has a fake order book and a "Trading Data" tab of randomly-generated
+ * numbers — still dropped here, since neither is real data and CoinGecko's
+ * free tier has no real per-candle volume or order-book endpoint to back
+ * them with. Kept: live price/detail, the range chart, watchlist toggle,
+ * and Buy/Sell. `days` values are CoinGecko's actual OHLC granularity
+ * buckets — 1 day returns 30-minute candles, 7-30 returns 4-hour candles,
+ * 365 returns 4-day candles.
  */
 const RANGES = [{ label: "24H", days: 1 }, { label: "7D", days: 7 }, { label: "30D", days: 30 }, { label: "1Y", days: 365 }];
 
@@ -25,7 +30,7 @@ export default function CoinDetailScreen({ navigation, route }) {
 
   const watched = state.watchlist.includes(id);
   const { data: coin, loading, error } = useCoinDetail(id);
-  const { data: points } = useCoinChart(id, range);
+  const { data: candles } = useCoinOHLC(id, range);
 
   const toggleWatch = () => {
     dispatch({ type: "watchlist/toggle", id });
@@ -76,7 +81,7 @@ export default function CoinDetailScreen({ navigation, route }) {
               {RANGES.map((r) => <Chip key={r.label} label={r.label} active={range === r.days} onPress={() => setRange(r.days)} />)}
             </View>
 
-            <Sparkline points={points ?? []} up={up} />
+            <CandlestickChart candles={candles} />
           </View>
 
           <View style={{ flexDirection: "row", gap: 20, borderBottomWidth: 1, borderBottomColor: colors.borderSubtle, paddingBottom: 10, marginBottom: spacing.md }}>
