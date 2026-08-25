@@ -52,17 +52,20 @@ export function Screen({ children, scroll = true, style, footer }) {
   );
 }
 
+// Back button is a small circular translucent pill (confirmed against the
+// Figma file's own header pattern — 34px, rgba white 0.04 fill) rather than
+// a bare chevron, and the title sits left-aligned next to it, not centered.
 export function Header({ title, onBack, right }) {
   return (
     <View style={styles.header}>
       {onBack ? (
-        <Pressable onPress={onBack} hitSlop={12} style={styles.headerBtn}>
-          <Feather name="chevron-left" size={22} color={colors.textPrimary} />
+        <Pressable onPress={onBack} hitSlop={12} style={styles.backPill}>
+          <Feather name="chevron-left" size={19} color={colors.textPrimary} />
         </Pressable>
       ) : (
         <View style={styles.headerBtn} />
       )}
-      <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
+      {title ? <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text> : <View style={{ flex: 1 }} />}
       <View style={styles.headerBtn}>{right}</View>
     </View>
   );
@@ -386,11 +389,15 @@ const styles = StyleSheet.create({
   body: { flex: 1, padding: spacing.xl },
   scrollBody: { padding: spacing.xl, paddingBottom: 48 },
 
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
-  headerBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { flex: 1, textAlign: "center", color: colors.textPrimary, fontSize: 16, fontFamily: fonts.semibold },
+  header: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md },
+  headerBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
+  backPill: { width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.06)", alignItems: "center", justifyContent: "center" },
+  headerTitle: { flex: 1, textAlign: "left", color: colors.textPrimary, fontSize: 17, fontFamily: fonts.medium, letterSpacing: -0.2 },
 
-  button: { borderRadius: radius.md, paddingVertical: 15, alignItems: "center", justifyContent: "center", overflow: "hidden", ...shadow.cta },
+  // Every primary/secondary action button in the Figma file is a full pill
+  // (borderRadius = height/2), not a rounded rectangle — confirmed on
+  // Welcome, Login and Signup's CTAs alike.
+  button: { borderRadius: radius.pill, height: 50, alignItems: "center", justifyContent: "center", overflow: "hidden", ...shadow.cta },
   buttonSecondary: { backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.borderDefault },
   buttonDanger: { backgroundColor: colors.downDim, borderWidth: 1, borderColor: colors.down },
   buttonDisabled: { opacity: 0.4 },
