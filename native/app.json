@@ -1,17 +1,20 @@
 {
   "expo": {
-    "name": "native",
-    "slug": "native",
+    "name": "Zenbit Pro",
+    "slug": "zenbit-pro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#060B09",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.abrockyt.zenbitpro"
     },
     "android": {
+      "package": "com.abrockyt.zenbitpro",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#060B09",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,6 +23,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6e41bb5e-020e-49f7-b31b-9777668df766"
+      }
+    },
+    "owner": "malleabhinay",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6e41bb5e-020e-49f7-b31b-9777668df766"
     }
   }
 }
