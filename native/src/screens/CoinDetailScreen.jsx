@@ -8,6 +8,7 @@ import { useCoinDetail, useCoinOHLC, useCoinVolume, useCoinTickers } from "../da
 import { useApp, useToast } from "../state/store";
 import { INDICATORS } from "../lib/indicators";
 import { relativeTime } from "../lib/time";
+import { SyncEmptyState } from "../ui/SyncStatus";
 
 /**
  * Full trading view for one coin, laid out like a real exchange app:
@@ -125,10 +126,10 @@ export default function CoinDetailScreen({ navigation, route }) {
 
   const watched = state.watchlist.includes(id);
   const hasAlert = state.priceAlerts.some((a) => a.coinId === id);
-  const { data: coin, loading, error, refetch } = useCoinDetail(id, isFocused);
+  const { data: coin, loading, error, refetch, refreshing, retryAt } = useCoinDetail(id, isFocused);
   const { data: candles, error: candlesError, refetch: refetchCandles } = useCoinOHLC(id, range.days, isFocused);
   const { data: volumes } = useCoinVolume(id, range.days, isFocused);
-  const { data: tickers, loading: tickersLoading } = useCoinTickers(id, isFocused);
+  const { data: tickers, loading: tickersLoading, error: tickersError, refetch: refetchTickers, refreshing: tickersRefreshing, retryAt: tickersRetryAt } = useCoinTickers(id, isFocused);
 
   const md = coin?.market_data;
   const price = md?.current_price?.usd;
@@ -165,22 +166,11 @@ export default function CoinDetailScreen({ navigation, route }) {
     return (
       <Screen>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: spacing.md }}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.06)", alignItems: "center", justifyContent: "center" }}>
+          <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.overlayWeak, alignItems: "center", justifyContent: "center" }}>
             <Feather name="chevron-left" size={19} color={colors.textPrimary} />
           </Pressable>
         </View>
-        <View style={{ alignItems: "center", paddingVertical: 60, gap: 10 }}>
-          <Feather name="wifi-off" size={26} color={colors.textTertiary} />
-          <Text style={{ color: colors.textPrimary, fontSize: 15, fontFamily: fonts.semibold }}>Couldn't load this coin</Text>
-          <Text style={{ color: colors.textTertiary, fontSize: 13, textAlign: "center", maxWidth: 270, lineHeight: 18 }}>
-            {String(error).includes("429")
-              ? "The free price feed is rate-limiting right now. Give it a few seconds and try again."
-              : "The price feed didn't respond."}
-          </Text>
-          <View style={{ marginTop: 6, minWidth: 150 }}>
-            <Button onPress={refetch}>Try again</Button>
-          </View>
-        </View>
+        <SyncEmptyState error={error} refreshing={refreshing} retryAt={retryAt} onRetry={refetch} />
       </Screen>
     );
   }
@@ -197,7 +187,7 @@ export default function CoinDetailScreen({ navigation, route }) {
     >
       {/* Header */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: spacing.md }}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.06)", alignItems: "center", justifyContent: "center" }}>
+        <Pressable onPress={() => navigation.goBack()} hitSlop={12} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.overlayWeak, alignItems: "center", justifyContent: "center" }}>
           <Feather name="chevron-left" size={19} color={colors.textPrimary} />
         </Pressable>
         <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -363,6 +353,19 @@ export default function CoinDetailScreen({ navigation, route }) {
                       <Skeleton width={60} height={12} />
                     </View>
                   ))
+                ) : tickersError && !tickers.length ? (
+                  // Was falling into the same "no exchange data" copy as a
+                  // genuinely empty coin, which mislabelled an ordinary
+                  // rate-limit pause as this coin having no listings —
+                  // wrong claim, and no way to retry.
+                  <SyncEmptyState
+                    error={tickersError}
+                    refreshing={tickersRefreshing}
+                    retryAt={tickersRetryAt}
+                    onRetry={refetchTickers}
+                    title="Exchange listings paused"
+                    body="Live exchange data will reload automatically — this isn't about this coin, the feed is just catching up."
+                  />
                 ) : !tickers.length ? (
                   <Text style={{ color: colors.textTertiary, fontSize: 12.5, paddingVertical: 14 }}>No exchange data available for this coin.</Text>
                 ) : (
@@ -405,10 +408,14 @@ export default function CoinDetailScreen({ navigation, route }) {
                     <Text style={{ flex: 1, color: colors.down, fontSize: 12, fontFamily: fonts.mono, textAlign: "right" }}>{compact(t.cost_to_move_down_usd)}</Text>
                   </View>
                 ))}
-                {!tickers.some((t) => t.cost_to_move_up_usd) && !tickersLoading && (
-                  <Text style={{ color: colors.textTertiary, fontSize: 12.5, paddingVertical: 14 }}>
-                    No venue reports order-book depth for this pair.
-                  </Text>
+                {tickersError && !tickers.length ? (
+                  <SyncEmptyState error={tickersError} refreshing={tickersRefreshing} retryAt={tickersRetryAt} onRetry={refetchTickers} />
+                ) : (
+                  !tickers.some((t) => t.cost_to_move_up_usd) && !tickersLoading && (
+                    <Text style={{ color: colors.textTertiary, fontSize: 12.5, paddingVertical: 14 }}>
+                      No venue reports order-book depth for this pair.
+                    </Text>
+                  )
                 )}
               </View>
             )}

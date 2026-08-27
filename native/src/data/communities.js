@@ -1,0 +1,73 @@
+// Communities ("Squares" in-app) — topic groups people join, the closest
+// analogue to X Communities. Real Unsplash imagery for banners so the list
+// isn't a wall of grey placeholder rectangles.
+export const COMMUNITIES = [
+  {
+    id: "c-btc",
+    name: "Bitcoin Maxis",
+    handle: "bitcoin",
+    members: 184203,
+    online: 2841,
+    about: "Sound money, long time horizons, and very little patience for altcoin threads.",
+    banner: "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=900&q=80",
+    icon: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+    coin: "bitcoin",
+  },
+  {
+    id: "c-eth",
+    name: "Ethereum Builders",
+    handle: "ethbuilders",
+    members: 97410,
+    online: 1503,
+    about: "Contracts, rollups, gas golf. Ship something this week.",
+    banner: "https://images.unsplash.com/photo-1639762681057-408e52192e55?auto=format&fit=crop&w=900&q=80",
+    icon: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
+    coin: "ethereum",
+  },
+  {
+    id: "c-ta",
+    name: "Chart Room",
+    handle: "chartroom",
+    members: 52880,
+    online: 894,
+    about: "Technical analysis, entries and exits. Post your invalidation level or don't post.",
+    banner: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=900&q=80",
+    icon: null,
+    coin: null,
+  },
+  {
+    id: "c-sec",
+    name: "Self-Custody",
+    handle: "selfcustody",
+    members: 41209,
+    online: 402,
+    about: "Hardware wallets, backups, and recovery drills. Not your keys, not your coins.",
+    banner: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=900&q=80",
+    icon: null,
+    coin: null,
+  },
+  {
+    id: "c-defi",
+    name: "DeFi Degens",
+    handle: "defi",
+    members: 76115,
+    online: 1288,
+    about: "Yields, LPs, and liquidation stories told as cautionary tales.",
+    banner: "https://images.unsplash.com/photo-1642104704074-907c0698cbd9?auto=format&fit=crop&w=900&q=80",
+    icon: null,
+    coin: null,
+  },
+  {
+    id: "c-sol",
+    name: "Solana Speed",
+    handle: "solana",
+    members: 68430,
+    online: 1744,
+    about: "Fast blocks, cheap fees, and the occasional outage postmortem.",
+    banner: "https://images.unsplash.com/photo-1620321023374-d1a68fbc720d?auto=format&fit=crop&w=900&q=80",
+    icon: "https://assets.coingecko.com/coins/images/4128/large/solana.png",
+    coin: "solana",
+  },
+];
+
+export const COMMUNITY_BY_ID = Object.fromEntries(COMMUNITIES.map((c) => [c.id, c]));

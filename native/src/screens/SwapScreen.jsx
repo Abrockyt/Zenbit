@@ -4,8 +4,11 @@ import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Screen, TabBar, TextField, Button, Sheet, ResultDialog, Banner, colors, spacing, radius, gradients, fonts } from "../ui/kit";
+import { isLightTheme } from "../theme";
 import { useMarkets } from "../data/useCoinGecko";
 import { useApp, useToast } from "../state/store";
+import { useCurrency } from "../lib/useCurrency";
+import { SyncStatus, SyncEmptyState } from "../ui/SyncStatus";
 
 const PAIR_IDS = ["bitcoin", "ethereum", "solana", "tether", "usd-coin", "chainlink"];
 
@@ -13,15 +16,26 @@ const PAIR_IDS = ["bitcoin", "ethereum", "solana", "tether", "usd-coin", "chainl
 // them — confirmed against the real Swap frame (318:158), which is
 // meaningfully different from a flat form: two large blurred cards, a
 // circular direction indicator overlapping both.
-const swapStyles = StyleSheet.create({
-  panel: { padding: 16, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.borderSubtle, overflow: "hidden", gap: 8 },
-  panelLabel: { color: colors.textTertiary, fontSize: 12 },
-  panelSub: { color: colors.textTertiary, fontSize: 12 },
-  receiveAmount: { color: colors.textPrimary, fontSize: 26, fontFamily: fonts.mono },
-  coinPill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.surfaceRaised, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12 },
-  coinPillText: { color: colors.textPrimary, fontSize: 13, fontFamily: fonts.medium },
-  flipButton: { position: "absolute", top: "50%", left: "50%", marginLeft: -18, marginTop: -18, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.ink3, borderWidth: 3, borderColor: colors.surfaceScreen, alignItems: "center", justifyContent: "center", zIndex: 5 },
-});
+//
+// Built by a function called INSIDE the component, not StyleSheet.create at
+// module scope. A module-scope call reads `colors.x` exactly once, at
+// import time, and bakes the dark palette's values in as plain strings —
+// this is the same snapshot bug the shared kit.jsx styles had before it was
+// switched to a rebuild-on-theme-change factory. This screen's whole
+// subtree already remounts on a theme switch (Screen keys its children by
+// mode), so calling this inside render is enough on its own: every re-mount
+// naturally re-reads the live `colors` values, no subscription needed.
+function makeSwapStyles() {
+  return StyleSheet.create({
+    panel: { padding: 16, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.borderSubtle, overflow: "hidden", gap: 8 },
+    panelLabel: { color: colors.textTertiary, fontSize: 12 },
+    panelSub: { color: colors.textTertiary, fontSize: 12 },
+    receiveAmount: { color: colors.textPrimary, fontSize: 26, fontFamily: fonts.mono },
+    coinPill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: colors.surfaceRaised, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12 },
+    coinPillText: { color: colors.textPrimary, fontSize: 13, fontFamily: fonts.medium },
+    flipButton: { position: "absolute", top: "50%", left: "50%", marginLeft: -18, marginTop: -18, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceCardSolid, borderWidth: 3, borderColor: colors.surfaceScreen, alignItems: "center", justifyContent: "center", zIndex: 5 },
+  });
+}
 
 function KeyValue({ label, value }) {
   return (
@@ -37,7 +51,10 @@ function KeyValue({ label, value }) {
 export default function SwapScreen({ navigation }) {
   const { state, dispatch } = useApp();
   const toast = useToast();
-  const { data: markets, loading, error } = useMarkets(PAIR_IDS);
+  const { money } = useCurrency();
+  const { data: markets, loading, error, refetch, lastSuccessAt, refreshing, retryAt } = useMarkets(PAIR_IDS, { vs: state.settings.currency });
+  const swapStyles = makeSwapStyles();
+  const blurTint = isLightTheme() ? "light" : "dark";
 
   const [fromSym, setFromSym] = useState("usdc");
   const [toSym, setToSym] = useState("sol");
@@ -87,23 +104,41 @@ export default function SwapScreen({ navigation }) {
     );
   }
   if (status === "success") {
-    return <ResultDialog tone="success" title="Swap sent!" message={`${receiveAmount.toFixed(4)} ${toSym.toUpperCase()} is on its way to your wallet.`} primaryLabel="Done" onPrimary={() => { toast("Swap complete."); navigation.navigate("Home"); }} />;
+    return <ResultDialog tone="success" title="Swap sent!" message={`${receiveAmount.toFixed(4)} ${toSym.toUpperCase()} is on its way to your wallet.`} primaryLabel="Done" onPrimary={() => { toast("Swap complete."); navigation.navigate("MainTabs", { screen: "Home" }); }} />;
   }
   if (status === "error") {
-    return <ResultDialog tone="error" title="Swap failed" message="Slippage moved past your limit. Try again or adjust your slippage tolerance." primaryLabel="Try again" onPrimary={() => setStatus(null)} secondaryLabel="Cancel" onSecondary={() => navigation.navigate("Home")} />;
+    return <ResultDialog tone="error" title="Swap failed" message="Slippage moved past your limit. Try again or adjust your slippage tolerance." primaryLabel="Try again" onPrimary={() => setStatus(null)} secondaryLabel="Cancel" onSecondary={() => navigation.navigate("MainTabs", { screen: "Home" })} />;
   }
 
   return (
     <Screen>
-      <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600", marginBottom: spacing.lg }}>Swap tokens</Text>
+      <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600" }}>Swap tokens</Text>
+      <SyncStatus
+        lastSuccessAt={lastSuccessAt}
+        error={error}
+        refreshing={refreshing}
+        retryAt={retryAt}
+        onRetry={refetch}
+        style={{ marginTop: 5, marginBottom: spacing.lg }}
+      />
 
-      {error ? (
-        <Banner tone="danger">Price feed unavailable — we can't quote a swap without live prices right now.</Banner>
+      {/* Only block the form when there's genuinely no price to quote from.
+          With cached rates available the swap still works, so a paused feed
+          shouldn't replace the whole screen with an error. */}
+      {error && !markets?.length ? (
+        <SyncEmptyState
+          error={error}
+          refreshing={refreshing}
+          retryAt={retryAt}
+          onRetry={refetch}
+          title="Waiting on live rates"
+          body="A swap needs a current price to quote against, so this unlocks as soon as the feed is back."
+        />
       ) : (
         <View>
           <View style={{ position: "relative" }}>
             <View style={[swapStyles.panel, { marginBottom: 8 }]}>
-              <BlurView intensity={24} tint="dark" style={StyleSheet.absoluteFillObject} />
+              <BlurView intensity={24} tint={blurTint} style={StyleSheet.absoluteFillObject} />
               <LinearGradient colors={gradients.card} style={StyleSheet.absoluteFillObject} />
               <Text style={swapStyles.panelLabel}>You pay</Text>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -115,15 +150,28 @@ export default function SwapScreen({ navigation }) {
                   <Feather name="chevron-down" size={14} color={colors.textSecondary} />
                 </Pressable>
               </View>
-              <Text style={swapStyles.panelSub}>≈ ${(amountNum * fromPrice).toFixed(2)}</Text>
+              <Text style={swapStyles.panelSub}>≈ {money(amountNum * fromPrice)}</Text>
             </View>
 
-            <View style={swapStyles.flipButton}>
+            {/* Was a bare View — implied a flip direction control but had no
+                onPress or flip logic anywhere in the file. Now swaps the two
+                sides for real: the pair, the typed amount becomes the new
+                receive-side estimate's basis, and the quote re-derives from
+                the swapped rate. */}
+            <Pressable
+              onPress={() => {
+                setFromSym(toSym);
+                setToSym(fromSym);
+                setAmount(receiveAmount ? receiveAmount.toFixed(6) : amount);
+              }}
+              style={swapStyles.flipButton}
+              hitSlop={8}
+            >
               <Feather name="arrow-down" size={18} color={colors.textPrimary} />
-            </View>
+            </Pressable>
 
             <View style={[swapStyles.panel, { marginTop: 0 }]}>
-              <BlurView intensity={24} tint="dark" style={StyleSheet.absoluteFillObject} />
+              <BlurView intensity={24} tint={blurTint} style={StyleSheet.absoluteFillObject} />
               <LinearGradient colors={gradients.card} style={StyleSheet.absoluteFillObject} />
               <Text style={swapStyles.panelLabel}>You receive</Text>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -133,7 +181,7 @@ export default function SwapScreen({ navigation }) {
                   <Feather name="chevron-down" size={14} color={colors.textSecondary} />
                 </Pressable>
               </View>
-              <Text style={swapStyles.panelSub}>≈ ${(receiveAmount * toPrice).toFixed(2)}</Text>
+              <Text style={swapStyles.panelSub}>≈ {money(receiveAmount * toPrice)}</Text>
             </View>
           </View>
 
@@ -144,7 +192,7 @@ export default function SwapScreen({ navigation }) {
 
           <View style={{ padding: 14, borderRadius: radius.md, backgroundColor: colors.surfaceCard, marginBottom: spacing.md }}>
             <KeyValue label="Rate" value={loading && !markets ? "Finding rate…" : rate ? `1 ${fromSym.toUpperCase()} ≈ ${rate.toFixed(6)} ${toSym.toUpperCase()}` : "Unavailable"} />
-            <KeyValue label="Network fee" value={`$${fee.toFixed(2)}`} />
+            <KeyValue label="Network fee" value={money(fee)} />
             <KeyValue label="Slippage tolerance" value="0.5%" />
           </View>
 
@@ -164,7 +212,7 @@ export default function SwapScreen({ navigation }) {
               <Text style={{ color: colors.textPrimary, fontSize: 15 }}>{m.name}</Text>
               <Text style={{ color: colors.textTertiary, fontSize: 12 }}>{m.symbol.toUpperCase()}</Text>
             </View>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>${m.current_price?.toLocaleString()}</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{money(m.current_price ?? 0)}</Text>
           </Pressable>
         ))}
       </Sheet>
@@ -173,7 +221,7 @@ export default function SwapScreen({ navigation }) {
         <KeyValue label="You pay" value={`${amount} ${fromSym.toUpperCase()}`} />
         <KeyValue label="You receive" value={`${receiveAmount.toFixed(6)} ${toSym.toUpperCase()}`} />
         <KeyValue label="Rate" value={`1 ${fromSym.toUpperCase()} ≈ ${rate.toFixed(6)} ${toSym.toUpperCase()}`} />
-        <KeyValue label="Network fee" value={`$${fee.toFixed(2)}`} />
+        <KeyValue label="Network fee" value={money(fee)} />
         <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
           <Button onPress={submit}>Confirm</Button>
           <Button variant="secondary" onPress={() => setConfirming(false)}>Cancel</Button>

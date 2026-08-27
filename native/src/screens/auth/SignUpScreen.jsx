@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { Screen, Header, Button, TextField, colors, spacing } from "../../ui/kit";
 import { useApp } from "../../state/store";
 
@@ -21,8 +21,14 @@ export default function SignUpScreen({ navigation }) {
       footer={
         <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
           <Button onPress={submit} loading={loading} disabled={!email.includes("@")}>Continue</Button>
+          {/* Was plain static Text — implied a link but tapped to nothing,
+              and TermsScreen (with its own accept flow) sat registered and
+              unreachable. Now a real link. */}
           <Text style={{ color: colors.textTertiary, fontSize: 11, textAlign: "center", marginTop: spacing.md }}>
-            By continuing you agree to our Terms and Privacy Policy.
+            By continuing you agree to our{" "}
+            <Text style={{ color: colors.textSecondary, textDecorationLine: "underline" }} onPress={() => navigation.navigate("Terms")}>
+              Terms and Privacy Policy
+            </Text>.
           </Text>
         </View>
       }

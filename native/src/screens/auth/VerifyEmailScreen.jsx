@@ -31,7 +31,7 @@ export default function VerifyEmailScreen({ navigation }) {
     if (code.length !== 6 || code !== otp) { setError(true); return; }
     setError(false);
     dispatch({ type: "onboarding/set", patch: { emailVerified: true } });
-    navigation.navigate("CreateWallet");
+    navigation.navigate("Country");
   }
 
   function resend() {

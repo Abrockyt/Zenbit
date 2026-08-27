@@ -24,46 +24,69 @@ const SLIDES = [
   { title: "One tap to send or spend", body: "Move funds instantly, or spend straight from your wallet with the card." },
 ];
 const { width: SCREEN_W } = Dimensions.get("window");
+const H_PADDING = 20;
+// The carousel lives inside footer's paddingHorizontal:20, so one "page" is
+// the screen minus both paddings — NOT the full screen width. Paging,
+// slide width and programmatic scrollTo all have to agree on this single
+// number: they didn't before (scrollTo stepped by SCREEN_W while pagingEnabled
+// snapped to the narrower track), so every auto-advance drifted 40px further
+// out of alignment and slides ended up rendering half-off the screen.
+const PAGE_W = SCREEN_W - H_PADDING * 2;
 const AUTO_ADVANCE_MS = 2800;
 
 // Story-style progress dot (Instagram/Snapchat pattern): every slide gets a
 // fixed-width track, the active one fills left-to-right over the slide's
 // dwell time, and past slides stay fully filled instead of just "on/off".
-function StoryDot({ active, done }) {
+// Tappable, so the bar is a real control rather than a passive indicator.
+function StoryDot({ active, done, paused, onPress }) {
   const fill = useRef(new Animated.Value(done ? 1 : 0)).current;
 
   useEffect(() => {
-    if (active) {
+    if (active && !paused) {
       fill.setValue(0);
       Animated.timing(fill, { toValue: 1, duration: AUTO_ADVANCE_MS, useNativeDriver: false }).start();
+    } else if (active && paused) {
+      // Manual browsing: show the slide as current without running the
+      // countdown, since nothing is going to auto-advance off it.
+      fill.setValue(1);
     } else {
       fill.setValue(done ? 1 : 0);
     }
-  }, [active, done]);
+  }, [active, done, paused]);
 
   return (
-    <View style={styles.dotTrack}>
+    <Pressable onPress={onPress} hitSlop={10} style={styles.dotTrack}>
       <Animated.View style={[styles.dotFill, { width: fill.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) }]} />
-    </View>
+    </Pressable>
   );
 }
 
 export default function WelcomeScreen({ navigation }) {
   const scrollRef = useRef(null);
   const [index, setIndex] = useState(0);
+  // Once the person swipes or taps a dot themselves, stop yanking the
+  // carousel out from under them — auto-advance is for an idle screen.
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
+    if (paused) return;
     const timer = setInterval(() => {
       const next = (index + 1) % SLIDES.length;
-      scrollRef.current?.scrollTo({ x: next * SCREEN_W, animated: true });
+      scrollRef.current?.scrollTo({ x: next * PAGE_W, animated: true });
       setIndex(next);
     }, AUTO_ADVANCE_MS);
     return () => clearInterval(timer);
-  }, [index]);
+  }, [index, paused]);
 
   const onMomentumEnd = (e) => {
-    const next = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
+    const next = Math.round(e.nativeEvent.contentOffset.x / PAGE_W);
     setIndex(next);
+  };
+
+  const goTo = (i) => {
+    setPaused(true);
+    setIndex(i);
+    scrollRef.current?.scrollTo({ x: i * PAGE_W, animated: true });
   };
 
   return (
@@ -87,11 +110,12 @@ export default function WelcomeScreen({ navigation }) {
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
+            onScrollBeginDrag={() => setPaused(true)}
             onMomentumScrollEnd={onMomentumEnd}
-            style={{ width: SCREEN_W - 40 }}
+            style={{ width: PAGE_W }}
           >
             {SLIDES.map((s) => (
-              <View key={s.title} style={{ width: SCREEN_W - 40 }}>
+              <View key={s.title} style={{ width: PAGE_W }}>
                 <Text style={styles.title}>{s.title}</Text>
                 <Text style={styles.body}>{s.body}</Text>
               </View>
@@ -100,7 +124,7 @@ export default function WelcomeScreen({ navigation }) {
 
           <View style={styles.dots}>
             {SLIDES.map((s, i) => (
-              <StoryDot key={s.title} active={i === index} done={i < index} />
+              <StoryDot key={s.title} active={i === index} done={i < index} paused={paused} onPress={() => goTo(i)} />
             ))}
           </View>
 

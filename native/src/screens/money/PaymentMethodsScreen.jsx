@@ -189,7 +189,7 @@ export default function PaymentMethodsScreen({ navigation }) {
                 </>
               ) : (
                 <>
-                  <Feather name="maximize" size={40} color="rgba(255,255,255,0.16)" />
+                  <Feather name="maximize" size={40} color={colors.borderDefault} />
                   <Text style={{ color: colors.textTertiary, fontSize: 12, marginTop: 10 }}>Point at a bank or UPI QR</Text>
                 </>
               )}

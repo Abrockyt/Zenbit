@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { View, Text } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Screen, Header, Button, Banner, colors, spacing, radius } from "../../ui/kit";
+import { goTo } from "../../lib/nav";
 import { useApp } from "../../state/store";
 
 const STEPS = [
@@ -28,11 +29,11 @@ export default function KycIntroScreen({ navigation, route }) {
       footer={
         <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
           <Button onPress={() => navigation.navigate("KycDocuments", { next })}>Start verification</Button>
-          <Button variant="secondary" onPress={() => navigation.navigate(next)}>Not now</Button>
+          <Button variant="secondary" onPress={() => goTo(navigation, next)}>Not now</Button>
         </View>
       }
     >
-      <Header title="Verify your identity" onBack={() => navigation.navigate(next)} />
+      <Header title="Verify your identity" onBack={() => goTo(navigation, next)} />
       <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: spacing.lg }}>
         Buying, selling and the Zenbit card need a verified identity. Holding, sending and swapping what you already own do not.
       </Text>

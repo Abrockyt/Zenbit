@@ -1,17 +1,29 @@
-import { View, FlatList } from "react-native";
+import { View, FlatList, Pressable, Text } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { Screen, Header, PriceRow, EmptyState, Button, SkeletonList, colors, spacing } from "../ui/kit";
 import { useMarkets } from "../data/useCoinGecko";
 import { useApp } from "../state/store";
+import { useCurrency } from "../lib/useCurrency";
+import { SyncStatus, SyncEmptyState } from "../ui/SyncStatus";
 
 export default function WatchlistScreen({ navigation }) {
   const { state } = useApp();
-  const { data: markets, loading, error } = useMarkets(state.watchlist);
+  const { currency } = useCurrency();
+  const { data: markets, loading, error, refetch, lastSuccessAt, refreshing, retryAt } = useMarkets(state.watchlist, { vs: currency });
 
   return (
     <Screen scroll={false}>
-      <Header title="Watchlist" onBack={() => navigation.goBack()} />
+      <Header
+        title="Watchlist"
+        onBack={() => navigation.goBack()}
+        right={
+          <Pressable onPress={() => navigation.navigate("PickWatchlist", { mode: "edit" })} hitSlop={8}>
+            <Feather name="edit-2" size={17} color={colors.textSecondary} />
+          </Pressable>
+        }
+      />
       {error && !markets?.length ? (
-        <EmptyState icon="wifi-off" title="Price feed unavailable" body="CoinGecko didn't respond. Pull to refresh or check your connection." />
+        <SyncEmptyState error={error} refreshing={refreshing} retryAt={retryAt} onRetry={refetch} />
       ) : loading && !markets?.length ? (
         <View style={{ marginTop: spacing.sm }}><SkeletonList count={6} /></View>
       ) : !markets?.length ? (
@@ -22,11 +34,11 @@ export default function WatchlistScreen({ navigation }) {
           data={markets}
           keyExtractor={(c) => c.id}
           renderItem={({ item: c }) => (
-            <PriceRow symbol={c.symbol} name={c.name} price={c.current_price} changePct={c.price_change_percentage_24h ?? 0} iconUrl={c.image} onPress={() => navigation.navigate("CoinDetail", { id: c.id })} />
+            <PriceRow symbol={c.symbol} name={c.name} price={c.current_price} changePct={c.price_change_percentage_24h ?? 0} iconUrl={c.image} currency={currency} onPress={() => navigation.navigate("CoinDetail", { id: c.id })} />
           )}
         />
       )}
-      {!markets?.length && !loading && <Button variant="secondary" onPress={() => navigation.navigate("Market")}>Browse market</Button>}
+      {!markets?.length && !loading && <Button variant="secondary" onPress={() => navigation.navigate("MainTabs", { screen: "Market" })}>Browse market</Button>}
     </Screen>
   );
 }

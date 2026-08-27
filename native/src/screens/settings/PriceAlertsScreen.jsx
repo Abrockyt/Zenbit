@@ -9,14 +9,14 @@ export default function PriceAlertsScreen({ navigation, route }) {
   const { state, dispatch } = useApp();
   const toast = useToast();
   const prefill = route.params?.coin;
-  const { data: markets, loading, error } = useMarkets(state.watchlist);
+  const cur = state.settings.currency;
+  const { data: markets, loading, error } = useMarkets(state.watchlist, { vs: cur });
 
   const [open, setOpen] = useState(Boolean(prefill));
   const [coin, setCoin] = useState(prefill ?? state.watchlist[0]);
   const [direction, setDirection] = useState("above");
   const [target, setTarget] = useState("");
 
-  const cur = state.settings.currency;
   const priceOf = (id) => markets?.find((m) => m.id === id)?.current_price ?? null;
   const selectedPrice = priceOf(coin);
 
@@ -50,7 +50,9 @@ export default function PriceAlertsScreen({ navigation, route }) {
         })
       )}
 
-      {error && <Banner tone="danger">Price feed unavailable. Your alerts are safe — we just can't show current prices right now.</Banner>}
+      {/* warn, not danger: the alerts themselves are untouched and this
+          recovers on its own, so a red alarm overstates it. */}
+      {error && <Banner tone="warn">Live prices are paused, so "now" figures may lag. Your alerts are still active and will fire as normal.</Banner>}
 
       <Sheet open={open} onClose={() => setOpen(false)} title="New price alert">
         <Text style={{ color: colors.textTertiary, fontSize: 12, marginBottom: 8 }}>Coin</Text>

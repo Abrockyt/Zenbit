@@ -29,7 +29,7 @@ export default function SendScreen({ navigation, route }) {
   const cur = state.settings.currency;
   const holdings = state.wallet.holdings;
   const ids = useMemo(() => holdings.map((h) => h.id), [holdings]);
-  const { data: markets } = useMarkets(ids);
+  const { data: markets } = useMarkets(ids, { vs: cur });
 
   const [assetId, setAssetId] = useState(holdings[0]?.id ?? "ethereum");
   const [address, setAddress] = useState(route.params?.address ?? "");
@@ -83,11 +83,11 @@ export default function SendScreen({ navigation, route }) {
         footer={
           <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
             <Button onPress={() => navigation.navigate("RecentActivity")}>View activity</Button>
-            <Button variant="secondary" onPress={() => navigation.navigate("Home")}>Back to home</Button>
+            <Button variant="secondary" onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}>Back to home</Button>
           </View>
         }
       >
-        <Header title="Send" onBack={() => navigation.navigate("Home")} />
+        <Header title="Send" onBack={() => navigation.navigate("MainTabs", { screen: "Home" })} />
         <View style={{ alignItems: "center", gap: 14, paddingVertical: 40, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: "rgba(58,222,126,0.12)", borderWidth: 1, borderColor: colors.up, alignItems: "center", justifyContent: "center" }}>
             <Feather name="check" size={24} color={colors.up} />

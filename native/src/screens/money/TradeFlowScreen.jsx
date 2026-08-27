@@ -6,6 +6,7 @@ import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";
 import { useMarkets } from "../../data/useCoinGecko";
 import { formatMoney, formatCrypto } from "../../lib/format";
+import { SyncEmptyState } from "../../ui/SyncStatus";
 
 const COINS = ["bitcoin", "ethereum", "solana", "usd-coin", "chainlink"];
 const QUICK = [50, 100, 500, 1000];
@@ -33,8 +34,6 @@ export default function TradeFlowScreen({ navigation, route }) {
   const toast = useToast();
   const cur = state.settings.currency;
 
-  const { data: markets, loading, error, refetch } = useMarkets(COINS);
-
   const [coinId, setCoinId] = useState("bitcoin");
   const [fiatAmount, setFiatAmount] = useState("");
   const [stage, setStage] = useState("form");
@@ -42,6 +41,15 @@ export default function TradeFlowScreen({ navigation, route }) {
   const [methodId, setMethodId] = useState(null);
   const [step, setStep] = useState(0);
   const [orderId] = useState(() => `ZB${Date.now().toString(36).toUpperCase()}`);
+  // The currency the order is actually being priced/reviewed in — captured
+  // once review starts, not read live. A currency switch mid-order (person
+  // backgrounds the app, changes it in Settings, comes back) shouldn't
+  // retroactively re-fetch and relabel numbers on an order already being
+  // confirmed, the same way the price itself is locked for LOCK_SECONDS.
+  const [reviewCurrency, setReviewCurrency] = useState(cur);
+  const activeCur = stage === "form" ? cur : reviewCurrency;
+
+  const { data: markets, loading, error, refetch, refreshing, retryAt } = useMarkets(COINS, { vs: activeCur });
 
   const market = markets?.find((m) => m.id === coinId);
   const price = market?.current_price ?? 0;
@@ -113,10 +121,14 @@ export default function TradeFlowScreen({ navigation, route }) {
     return (
       <Screen>
         <Header title={buying ? "Buy" : "Sell"} onBack={() => navigation.goBack()} />
-        <Banner tone="danger">We can't price this trade right now, so it would be unsafe to quote you.</Banner>
-        <View style={{ marginTop: spacing.md }}>
-          <Button onPress={refetch}>Try again</Button>
-        </View>
+        <SyncEmptyState
+          error={error}
+          refreshing={refreshing}
+          retryAt={retryAt}
+          onRetry={refetch}
+          title="Waiting on a live price"
+          body={`We won't quote a ${buying ? "purchase" : "sale"} without a current price, so this opens back up the moment the feed returns. Nothing has been charged.`}
+        />
       </Screen>
     );
   }
@@ -137,9 +149,9 @@ export default function TradeFlowScreen({ navigation, route }) {
       ["Order ID", orderId],
       ["Date", new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })],
       [buying ? "You bought" : "You sold", formatCrypto(units, market.symbol.toUpperCase())],
-      ["Price", `${formatMoney(price, cur)} / ${market.symbol.toUpperCase()}`],
-      ["Fee", formatMoney(fee, cur)],
-      [buying ? "Total charged" : "Total received", formatMoney(total, cur)],
+      ["Price", `${formatMoney(price, activeCur)} / ${market.symbol.toUpperCase()}`],
+      ["Fee", formatMoney(fee, activeCur)],
+      [buying ? "Total charged" : "Total received", formatMoney(total, activeCur)],
       ["Payment method", method?.label ?? "—"],
       ["Status", "Completed"],
     ];
@@ -152,7 +164,7 @@ export default function TradeFlowScreen({ navigation, route }) {
           </View>
         }
       >
-        <Header title="Receipt" onBack={() => navigation.navigate("Home")} />
+        <Header title="Receipt" onBack={() => navigation.navigate("MainTabs", { screen: "Home" })} />
         <View style={{ alignItems: "center", gap: 10, paddingVertical: 32, marginBottom: spacing.md }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: "rgba(58,222,126,0.12)", borderWidth: 1, borderColor: colors.up, alignItems: "center", justifyContent: "center" }}>
             <Feather name="check" size={24} color={colors.up} />
@@ -214,7 +226,7 @@ export default function TradeFlowScreen({ navigation, route }) {
       <Screen
         footer={
           <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.md }}>
-            <Button onPress={() => setStage("processing")} disabled={!method}>{buying ? `Pay ${formatMoney(total, cur)}` : `Confirm sale`}</Button>
+            <Button onPress={() => setStage("processing")} disabled={!method}>{buying ? `Pay ${formatMoney(total, activeCur)}` : `Confirm sale`}</Button>
             <Button variant="secondary" onPress={() => setStage("review")}>Back</Button>
           </View>
         }
@@ -252,7 +264,7 @@ export default function TradeFlowScreen({ navigation, route }) {
         <View style={{ padding: 16, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginTop: spacing.md }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <Text style={{ color: colors.textTertiary, fontSize: 13 }}>{buying ? "You pay" : "You receive"}</Text>
-            <Text style={{ color: colors.textPrimary, fontSize: 15, fontFamily: fonts.semibold }}>{formatMoney(total, cur)}</Text>
+            <Text style={{ color: colors.textPrimary, fontSize: 15, fontFamily: fonts.semibold }}>{formatMoney(total, activeCur)}</Text>
           </View>
         </View>
       </Screen>
@@ -264,10 +276,10 @@ export default function TradeFlowScreen({ navigation, route }) {
     const expired = lock === 0;
     const rows = [
       [buying ? "You buy" : "You sell", formatCrypto(units, market.symbol.toUpperCase())],
-      ["Price", `${formatMoney(price, cur)} / ${market.symbol.toUpperCase()}`],
-      [buying ? "Subtotal" : "Gross", formatMoney(fiat, cur)],
-      ["Fee (1.49%)", formatMoney(fee, cur)],
-      [buying ? "Total charged" : "You receive", formatMoney(total, cur)],
+      ["Price", `${formatMoney(price, activeCur)} / ${market.symbol.toUpperCase()}`],
+      [buying ? "Subtotal" : "Gross", formatMoney(fiat, activeCur)],
+      ["Fee (1.49%)", formatMoney(fee, activeCur)],
+      [buying ? "Total charged" : "You receive", formatMoney(total, activeCur)],
     ];
     return (
       <Screen
@@ -300,7 +312,7 @@ export default function TradeFlowScreen({ navigation, route }) {
     <Screen
       footer={
         <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
-          <Button disabled={!canReview} onPress={() => setStage("review")}>Review order</Button>
+          <Button disabled={!canReview} onPress={() => { setReviewCurrency(cur); setStage("review"); }}>Review order</Button>
         </View>
       }
     >

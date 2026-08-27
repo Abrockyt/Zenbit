@@ -1,5 +1,5 @@
-import { View, Text } from "react-native";
-import { Screen, Header, Button, Avatar, Row, EmptyState, colors, spacing, radius } from "../../ui/kit";
+import { View, Text, Pressable } from "react-native";
+import { Screen, Header, Button, Avatar, Row, EmptyState, colors, spacing, radius, fonts } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { DIRECTORY } from "../../data/directory";
 
@@ -14,7 +14,26 @@ export default function UserProfileScreen({ navigation, route }) {
   const muted = state.social.muted.includes(handle);
   const blocked = state.social.blocked.includes(handle);
   const posts = state.social.posts.filter((p) => p.author.handle === handle);
-  const canMessage = !isMe && (following || state.social.followers.includes(handle));
+  // Used to require a follow relationship in either direction before the
+  // button worked at all, which meant it silently refused to do anything
+  // for most profiles in the seed data — reading as a dead button rather
+  // than a deliberate restriction with no explanation on screen. Anyone can
+  // start a conversation; per-account message permissions are a real
+  // feature (Settings → Who can message you) that isn't modelled per-seed-
+  // account here, so gating on it for a handful of directory entries did
+  // more harm (looked broken) than good (enforced a rule nothing explains).
+  const canMessage = !isMe;
+
+  // Your own counts come from live state (they change when you follow
+  // someone); everyone else's come from the directory. The +1 reflects you
+  // following them right now, so the number moves when you tap Follow
+  // rather than sitting frozen while the button says "Following".
+  const followerCount = isMe
+    ? state.social.followers.length
+    : (DIRECTORY[handle]?.followers ?? 0) + (following ? 1 : 0);
+  const followingCount = isMe
+    ? state.social.following.length
+    : (DIRECTORY[handle]?.following?.length ?? 0);
 
   const openThread = () => {
     const existing = state.chat.threads.find((t) => t.with.handle === handle);
@@ -25,7 +44,7 @@ export default function UserProfileScreen({ navigation, route }) {
   };
 
   return (
-    <Screen>
+    <Screen bg="black">
       <Header title={isMe ? "Your profile" : `@${handle}`} onBack={() => navigation.goBack()} />
 
       <View style={{ gap: 14, padding: 20, borderRadius: radius.xl, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, marginBottom: spacing.md }}>
@@ -38,14 +57,23 @@ export default function UserProfileScreen({ navigation, route }) {
         </View>
         {person.bio ? <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{person.bio}</Text> : null}
 
+        {/* Both blocks were bare Views with no onPress, and for anyone who
+            isn't you the counts were the hardcoded literals 1284 / 312 — so
+            every profile showed the same two numbers and tapping them did
+            nothing. Now real per-account figures, and each opens the list
+            it describes (FollowListScreen, which was built but orphaned). */}
         <View style={{ flexDirection: "row", gap: 24 }}>
-          <View>
-            <Text style={{ color: colors.textPrimary, fontSize: 15 }}>{isMe ? state.social.followers.length : 1284}</Text>
+          <Pressable onPress={() => navigation.navigate("FollowList", { handle, list: "followers" })} hitSlop={6}>
+            <Text style={{ color: colors.textPrimary, fontSize: 15, fontFamily: fonts.semibold }}>{followerCount.toLocaleString()}</Text>
             <Text style={{ color: colors.textTertiary, fontSize: 12 }}>Followers</Text>
-          </View>
-          <View>
-            <Text style={{ color: colors.textPrimary, fontSize: 15 }}>{isMe ? state.social.following.length : 312}</Text>
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate("FollowList", { handle, list: "following" })} hitSlop={6}>
+            <Text style={{ color: colors.textPrimary, fontSize: 15, fontFamily: fonts.semibold }}>{followingCount.toLocaleString()}</Text>
             <Text style={{ color: colors.textTertiary, fontSize: 12 }}>Following</Text>
+          </Pressable>
+          <View>
+            <Text style={{ color: colors.textPrimary, fontSize: 15, fontFamily: fonts.semibold }}>{posts.length}</Text>
+            <Text style={{ color: colors.textTertiary, fontSize: 12 }}>Posts</Text>
           </View>
         </View>
 

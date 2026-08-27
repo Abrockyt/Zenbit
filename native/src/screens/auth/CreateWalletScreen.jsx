@@ -17,7 +17,14 @@ export default function CreateWalletScreen({ navigation }) {
         <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
           <Button
             disabled={!revealed}
-            onPress={() => { dispatch({ type: "onboarding/set", patch: { phraseBackedUp: true } }); navigation.navigate("FaceId"); }}
+            onPress={() => {
+              dispatch({ type: "onboarding/set", patch: { phraseBackedUp: true } });
+              // KYC + a watchlist pick are folded into signup itself rather
+              // than gated behind the first Buy/Sell — the research memo
+              // (zenbit-crypto-app-ux-research) found in-flow onboarding
+              // measurably cuts drop-off vs. hitting a verification wall later.
+              navigation.navigate("KycIntro", { next: "PickWatchlist" });
+            }}
           >
             I've saved it
           </Button>

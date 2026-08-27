@@ -14,7 +14,7 @@ export default function CardDetailScreen({ navigation }) {
       <Screen>
         <Header title="Card" onBack={() => navigation.goBack()} />
         <EmptyState icon="credit-card" title="No card yet" body="Order a Zenbit card to spend your balance anywhere." />
-        <Button onPress={() => navigation.navigate("Card")}>Order a card</Button>
+        <Button onPress={() => navigation.navigate("MainTabs", { screen: "Card" })}>Order a card</Button>
       </Screen>
     );
   }

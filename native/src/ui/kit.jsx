@@ -1,11 +1,14 @@
-import { useEffect, useRef } from "react";
-import { Animated, Easing, View, Text, Pressable, StyleSheet, ScrollView, Switch as RNSwitch, TextInput, Image, Modal } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Easing, View, Text, Pressable, StyleSheet, ScrollView, Switch as RNSwitch, TextInput, Image, Modal, Platform, KeyboardAvoidingView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { colors, spacing, radius, gradients, fonts, shadow } from "../theme";
+import { colors, spacing, radius, gradients, fonts, shadow, onThemeChange, isLightTheme } from "../theme";
 import RadialBackground from "./RadialBackground";
+import AnimatedDots from "./AnimatedDots";
+import { formatMoney } from "../lib/format";
+import { useTheme } from "../state/ThemeProvider";
 
 /**
  * Shared RN UI kit — visual pass two.
@@ -55,16 +58,94 @@ function useEnterAnimation({ fromY = 0 } = {}) {
 // around every screen's content fought that native transition and made
 // navigation feel janky; the background/gradient can stay static underneath
 // the native animation without conflicting with it.
-export function Screen({ children, scroll = true, style, footer }) {
+/**
+ * `bg` picks the backdrop:
+ *   "plain"    - flat dark surface (default: every screen except Home)
+ *   "black"    - true black, used across the social section where dense
+ *                media and avatars sit better on it than on a tint
+ *   "animated" - the drifting aurora, Home only. Unlike the others this one
+ *                is rendered INSIDE the scroll view, so it travels with the
+ *                content instead of staying pinned behind it.
+ *
+ * "plain"/"black" are painted outside the ScrollView and stay put while
+ * content scrolls over them.
+ *
+ * The background lives here rather than as one shared layer behind the
+ * navigator: screens have to stay opaque to occlude the ones beneath them
+ * in the stack. Hoisting it out and making the navigator transparent left
+ * Home, Market and Social all visible at once.
+ */
+export function Screen({ children, scroll = true, style, footer, bg = "plain", onScroll, scrollEventThrottle = 16, stickyHeader }) {
   const Wrap = scroll ? ScrollView : View;
+  // Consuming the theme here is what makes a switch repaint the app. Most
+  // components never read this context — they read the mutated `colors`
+  // object — so React has no reason to re-render them on its own. Screen
+  // wraps virtually every page, so it re-renders on a switch and keys its
+  // children below to force their subtrees to re-read the new palette.
+  const { mode } = useTheme();
+  const light = isLightTheme();
+  // "black" is a dark-theme device for the social section; on the light
+  // theme true black would be a jarring hole in the middle of the app, so
+  // it maps to the plain white surface instead.
+  const base = bg === "black" && !light ? colors.black : colors.surfaceScreen;
+  const animated = bg === "animated";
+  // Any screen with a footer (PostDetail's reply box, Conversation's
+  // message field, Login, Compose…) had no keyboard handling at all — the
+  // footer stayed pinned to the bottom of the *screen*, and the keyboard
+  // simply rose up and covered it, so typing a reply meant typing blind
+  // into a field you could no longer see. KeyboardAvoidingView only wraps
+  // when there's a footer to protect; scroll-only screens don't need it.
+  const Wrapper = footer ? KeyboardAvoidingView : View;
+  const wrapperProps = footer
+    ? { style: { flex: 1 }, behavior: Platform.OS === "ios" ? "padding" : undefined, keyboardVerticalOffset: Platform.OS === "ios" ? 0 : 0 }
+    : { style: { flex: 1 } };
+
   return (
-    <View style={[styles.screen, style]}>
-      <RadialBackground />
+    <View style={[styles.screen, { backgroundColor: base }, style]}>
       <SafeAreaView style={{ flex: 1 }}>
-        <Wrap contentContainerStyle={scroll ? styles.scrollBody : styles.body} style={scroll ? { flex: 1 } : styles.body}>
-          {children}
+      {/* Sits above the ScrollView so it stays fixed while content scrolls
+          beneath it — the caller (Home) drives its own opacity/visibility
+          off `onScroll`, this just gives it a place to float. The node
+          passed in must position itself (position:"absolute", top/left/
+          right:0) — this slot doesn't reserve layout space of its own, or
+          every screen without a sticky header would get a dead gap here. */}
+      {stickyHeader}
+      <Wrapper {...wrapperProps}>
+        <Wrap
+          contentContainerStyle={scroll ? styles.scrollBody : styles.body}
+          style={scroll ? { flex: 1 } : styles.body}
+          onScroll={onScroll}
+          scrollEventThrottle={onScroll ? scrollEventThrottle : undefined}
+        >
+          {/* Negative insets cancel the content container's padding so the
+              field runs edge to edge; it sits first in the tree and is
+              absolutely positioned, so content renders over it and the two
+              scroll together as one surface. */}
+          {animated && (
+            <AnimatedDots
+              dotColor={colors.up}
+              fadeTo={colors.surfaceScreen}
+              style={{
+                position: "absolute",
+                // Pulled well above the content inset so the field starts
+                // behind the status-bar area and its top fade has room to
+                // resolve — clipping it at the safe-area edge is what left
+                // a visible seam across the top of the screen.
+                top: -(spacing.xl + 120),
+                left: -spacing.xl,
+                right: -spacing.xl,
+              }}
+            />
+          )}
+          {/* Keyed by theme so the screen's own subtree remounts and
+              re-reads colours on a switch, without disturbing the navigator
+              above. Screen-local state resets, which is an acceptable cost
+              for a rare, deliberate action — losing your place in the app
+              was not. */}
+          <View key={mode} style={scroll ? undefined : { flex: 1 }}>{children}</View>
         </Wrap>
         {footer}
+      </Wrapper>
       </SafeAreaView>
     </View>
   );
@@ -213,7 +294,7 @@ function RowBody({ icon, title, subtitle, right, danger, interactive }) {
 export function Card({ children, style }) {
   return (
     <View style={[styles.card, style]}>
-      <BlurView intensity={24} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <BlurView intensity={24} tint={isLightTheme() ? "light" : "dark"} style={StyleSheet.absoluteFillObject} />
       <LinearGradient colors={gradients.card} style={StyleSheet.absoluteFillObject} />
       <View>{children}</View>
     </View>
@@ -254,8 +335,11 @@ export function Switch({ value, onValueChange }) {
   );
 }
 
-export function TextField({ value, onChangeText, placeholder, keyboardType, secureTextEntry, autoFocus, multiline, icon }) {
-  if (!icon) {
+// `right` renders a control inside the field's trailing edge (a password
+// reveal toggle, a "Max" affordance) rather than forcing callers to lay one
+// out beside the input and fight its height.
+export function TextField({ value, onChangeText, placeholder, keyboardType, secureTextEntry, autoFocus, multiline, icon, right }) {
+  if (!icon && !right) {
     return (
       <TextInput
         value={value}
@@ -272,7 +356,7 @@ export function TextField({ value, onChangeText, placeholder, keyboardType, secu
   }
   return (
     <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <Feather name={icon} size={16} color={colors.textTertiary} style={{ position: "absolute", left: 16, zIndex: 1 }} />
+      {icon && <Feather name={icon} size={16} color={colors.textTertiary} style={{ position: "absolute", left: 16, zIndex: 1 }} />}
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -281,8 +365,9 @@ export function TextField({ value, onChangeText, placeholder, keyboardType, secu
         keyboardType={keyboardType}
         secureTextEntry={secureTextEntry}
         autoFocus={autoFocus}
-        style={[styles.input, { paddingLeft: 42, flex: 1 }]}
+        style={[styles.input, { flex: 1 }, icon && { paddingLeft: 42 }, right && { paddingRight: 46 }]}
       />
+      {right && <View style={{ position: "absolute", right: 16, zIndex: 1 }}>{right}</View>}
     </View>
   );
 }
@@ -439,27 +524,125 @@ const TABS = [
   { key: "Feed", icon: "users" },
   { key: "Profile", icon: "user" },
 ];
-export function TabBar({ navigation, active }) {
-  return (
-    <View style={styles.tabBarWrap}>
-      <View style={styles.tabBar}>
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFillObject} />
-        <LinearGradient colors={["rgba(20,28,25,0.5)", "rgba(12,17,15,0.65)"]} style={StyleSheet.absoluteFillObject} />
-        {TABS.map((t) => {
-          const isActive = active === t.key;
-          return (
-            <Pressable key={t.key} onPress={() => navigation.navigate(t.key)} style={styles.tabItem} hitSlop={8}>
-              <Feather name={t.icon} size={20} color={isActive ? colors.textPrimary : "rgba(255,255,255,0.4)"} />
-              {isActive && <View style={styles.tabDot} />}
-            </Pressable>
-          );
-        })}
+/**
+ * Genuinely different per platform, not one blur trick used everywhere.
+ *
+ * iOS: BlurView's iOS materials (`systemThinMaterial` etc.) ARE the same
+ * native UIVisualEffectView backing the OS's own tab bars and toolbars —
+ * "official" in the literal sense, not an approximation of one. That's
+ * worth using as-is.
+ *
+ * Android: expo-blur's Android path is a software blur, not a real system
+ * material — there is no Android equivalent of UIVisualEffectView, and the
+ * software approximation reads visibly flatter and greyer than the iOS
+ * version sitting right next to it in the same codebase. Rather than ship
+ * a worse-looking imitation of the iOS effect, Android gets Android's own
+ * real answer to "a surface that floats above the page": Material
+ * Design's elevation model — a solid surface lifted off the page by a real
+ * shadow (`shadow.sheet`, which already carries the right shadowColor/
+ * Offset/Opacity/Radius for iOS AND a real `elevation` value Android
+ * actually renders). This is the same "use the official thing, and only
+ * fall back to something else where the official thing doesn't hold up"
+ * approach as everywhere else in this pass — for Android, floating-surface
+ * elevation IS the official thing.
+ *
+ * Two earlier passes at glass here both failed for reasons that had
+ * nothing to do with this platform split: pass 1 painted colour blobs
+ * behind the glass "for it to refract", which leaked through the gaps as
+ * raw colour; pass 2 gave up on blur everywhere, iOS included. Neither
+ * problem applies here — the tab bar and hero row always float over real
+ * scrolling content, so there's nothing extra to paint in, and iOS keeps
+ * its real material this time.
+ */
+function GlassPanel({ radius: r, style, children }) {
+  if (Platform.OS === "ios") {
+    return (
+      <View style={[{ borderRadius: r, overflow: "hidden", borderWidth: 1, borderColor: colors.borderDefault }, style]}>
+        <BlurView intensity={80} tint={isLightTheme() ? "systemChromeMaterialLight" : "systemThinMaterialDark"} style={StyleSheet.absoluteFillObject} />
+        {/* One real highlight, not a painted gradient wash — a hairline
+            catching light along the top edge is what an actual glass rim
+            looks like; a soft gradient over the whole surface just reads
+            as "an effect" rather than a material. */}
+        <View style={styles.tabBarSheen} />
+        {children}
       </View>
+    );
+  }
+  return (
+    <View style={[{ borderRadius: r, backgroundColor: colors.surfaceCardSolid, borderWidth: 1, borderColor: colors.borderDefault }, shadow.sheet, style]}>
+      {children}
     </View>
   );
 }
 
-export function PriceRow({ symbol, name, price, changePct, holding, iconUrl, onPress }) {
+export function TabBar({ navigation, active }) {
+  const activeIndex = Math.max(0, TABS.findIndex((t) => t.key === active));
+  const [slotW, setSlotW] = useState(0);
+  const slide = useRef(new Animated.Value(activeIndex)).current;
+
+  useEffect(() => {
+    // Spring, not timing: the slight overshoot is what sells it as a
+    // physical object being flicked between slots.
+    Animated.spring(slide, { toValue: activeIndex, useNativeDriver: true, speed: 18, bounciness: 7 }).start();
+  }, [activeIndex]);
+
+  return (
+    <View style={styles.tabBarWrap}>
+      <GlassPanel radius={999} style={{ height: 64 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", height: "100%", paddingHorizontal: 12 }} onLayout={(e) => setSlotW((e.nativeEvent.layout.width - 24) / TABS.length)}>
+          {slotW > 0 && (
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.tabPill, { width: slotW, transform: [{ translateX: Animated.multiply(slide, slotW) }], overflow: "hidden" }]}
+            >
+              {Platform.OS === "ios" ? (
+                <BlurView intensity={40} tint="light" style={[StyleSheet.absoluteFillObject, { borderRadius: 999 }]} />
+              ) : (
+                <View style={[StyleSheet.absoluteFillObject, { borderRadius: 999, backgroundColor: colors.surfaceRaised }]} />
+              )}
+            </Animated.View>
+          )}
+
+          {TABS.map((t) => {
+            const isActive = active === t.key;
+            return (
+              <Pressable key={t.key} onPress={() => navigation.navigate(t.key)} style={styles.tabItem} hitSlop={8}>
+                <Feather name={t.icon} size={20} color={isActive ? colors.textPrimary : colors.iconMuted} />
+              </Pressable>
+            );
+          })}
+        </View>
+      </GlassPanel>
+    </View>
+  );
+}
+
+// Home hero action buttons (Deposit / Send / Receive / …) — same real
+// per-platform material as the tab bar, via the same GlassPanel.
+export function GlassAction({ icon, label, onPress, size = 58 }) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const press = (to) =>
+    Animated.spring(scale, { toValue: to, useNativeDriver: true, speed: 40, bounciness: 6 }).start();
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => press(0.9)}
+      onPressOut={() => press(1)}
+      style={{ alignItems: "center", gap: 8 }}
+    >
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <GlassPanel radius={size / 2} style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+          <Feather name={icon} size={22} color={colors.textPrimary} />
+        </GlassPanel>
+      </Animated.View>
+      <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export function PriceRow({ symbol, name, price, changePct, holding, iconUrl, currency = "usd", onPress }) {
   const up = (changePct ?? 0) >= 0;
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.55 }]}>
@@ -473,7 +656,7 @@ export function PriceRow({ symbol, name, price, changePct, holding, iconUrl, onP
         <Text style={styles.rowSubtitle}>{holding ?? symbol?.toUpperCase()}</Text>
       </View>
       <View style={{ alignItems: "flex-end" }}>
-        <Text style={[styles.rowTitle, { fontFamily: fonts.mono }]}>${Number(price ?? 0).toLocaleString("en-US", { maximumFractionDigits: price < 1 ? 4 : 2 })}</Text>
+        <Text style={[styles.rowTitle, { fontFamily: fonts.mono }]}>{formatMoney(price ?? 0, currency)}</Text>
         <Text style={{ fontSize: 12, marginTop: 2, fontFamily: fonts.mono, color: up ? colors.up : colors.down }}>{up ? "+" : ""}{(changePct ?? 0).toFixed(2)}%</Text>
       </View>
     </Pressable>
@@ -484,7 +667,7 @@ function SheetBody({ title, children }) {
   const enter = useEnterAnimation({ fromY: 60 });
   return (
     <Animated.View style={[styles.sheetBody, enter]}>
-      <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <BlurView intensity={50} tint={isLightTheme() ? "light" : "dark"} style={StyleSheet.absoluteFillObject} />
       <View style={styles.sheetHandle} />
       {title ? <Text style={styles.sheetTitle}>{title}</Text> : null}
       {/* maxHeight + overflow:hidden on the sheet clips anything past 75% of
@@ -538,14 +721,26 @@ export function ResultDialog({ tone = "success", title, message, primaryLabel, o
 
 export { colors, spacing, radius, gradients, fonts, shadow };
 
-const styles = StyleSheet.create({
+// Built through a factory rather than declared once, because a
+// StyleSheet.create at module scope snapshots colour values at import time
+// and would keep the dark palette forever after a theme switch. `styles` is
+// reassigned by the onThemeChange subscription below; components read
+// `styles.x` during render, so they pick up the new sheet on the re-render
+// that the theme change triggers.
+const makeStyles = () => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surfaceScreen },
   body: { flex: 1, padding: spacing.xl },
-  scrollBody: { padding: spacing.xl, paddingBottom: 48 },
+  // Bumped from 48: the stock tab bar (see MainTabs.jsx) sits with
+  // position:"absolute" on iOS — React Navigation's own docs call this out
+  // explicitly as needing extra scroll clearance, since an absolutely
+  // positioned bar no longer reserves its own layout space the way a
+  // docked one does, and a translucent bar over unpadded content would
+  // hide the last row or two of every tab screen behind it.
+  scrollBody: { padding: spacing.xl, paddingBottom: 110 },
 
   header: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md },
   headerBtn: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
-  backPill: { width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.06)", alignItems: "center", justifyContent: "center" },
+  backPill: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.overlayWeak, alignItems: "center", justifyContent: "center" },
   headerTitle: { flex: 1, textAlign: "left", color: colors.textPrimary, fontSize: 17, fontFamily: fonts.medium, letterSpacing: -0.2 },
 
   // Every primary/secondary action button in the Figma file is a full pill
@@ -605,18 +800,28 @@ const styles = StyleSheet.create({
   keypadKey: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
   keypadDigit: { color: colors.textPrimary, fontSize: 26, fontFamily: fonts.regular },
 
+  // NOTE: the tab bar's own surface (background/border/shadow) is now
+  // built entirely by GlassPanel above — it branches per-platform, which a
+  // single static style entry can't do. Nothing here provides that fill.
   tabBarWrap: { position: "absolute", left: 20, right: 20, bottom: 26 },
-  tabBar: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    height: 64, borderRadius: 999, paddingHorizontal: 12, overflow: "hidden",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.09)",
-    ...shadow.sheet,
-  },
   tabItem: { flex: 1, height: 44, alignItems: "center", justifyContent: "center", gap: 4 },
-  tabDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.textPrimary },
-
+  // A glass rim highlight is a light reflection, not a themed border — it
+  // has to stay a light line even on the light theme's surface, so this is
+  // a fixed white rather than a `colors.x` token (which would go dark on
+  // light theme and stop reading as a highlight at all).
+  tabBarSheen: {
+    position: "absolute", top: 0, left: 16, right: 16, height: 1,
+    backgroundColor: "rgba(255,255,255,0.5)",
+  },
+  // Background intentionally omitted — GlassAction/TabBar set it inline per
+  // platform (a translucent BlurView on iOS, a solid fill on Android), and
+  // a base fill here would sit as an opaque layer directly behind the iOS
+  // blur, defeating its translucency.
+  tabPill: {
+    position: "absolute", left: 12, top: 8, bottom: 8, borderRadius: 999,
+  },
   sheetBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)" },
-  sheetBody: { position: "absolute", left: 0, right: 0, bottom: 0, overflow: "hidden", backgroundColor: "rgba(15,22,20,0.92)", borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: spacing.xl, paddingTop: spacing.md, maxHeight: "75%", borderTopWidth: 1, borderColor: "rgba(255,255,255,0.1)" },
+  sheetBody: { position: "absolute", left: 0, right: 0, bottom: 0, overflow: "hidden", backgroundColor: colors.sheetBg, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: spacing.xl, paddingTop: spacing.md, maxHeight: "75%", borderTopWidth: 1, borderColor: colors.borderSubtle },
   sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.borderStrong, alignSelf: "center", marginBottom: spacing.md },
   sheetTitle: { color: colors.textPrimary, fontSize: 17, fontFamily: fonts.semibold, marginBottom: spacing.md },
 
@@ -626,3 +831,8 @@ const styles = StyleSheet.create({
   resultTitle: { color: colors.textPrimary, fontSize: 20, fontFamily: fonts.semibold },
   resultMessage: { color: colors.textSecondary, fontSize: 14, textAlign: "center", marginTop: 8, maxWidth: 280 },
 });
+
+let styles = makeStyles();
+// Rebuild the sheet whenever the palette swaps. The re-render that shows
+// the new styles comes from ThemeProvider bumping its context value.
+onThemeChange(() => { styles = makeStyles(); });

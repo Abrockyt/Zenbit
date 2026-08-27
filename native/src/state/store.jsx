@@ -19,75 +19,17 @@ import { createContext, useContext, useEffect, useMemo, useReducer } from "react
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { account, card as seedCard, holdings as seedHoldings, transactions as seedTx, watchlist as seedWatchlist } from "../data/mockWallet";
+import { seedPosts } from "../data/feedSeed";
 
-const KEY = "zenbit-pro:state:v4";
+// v5: posts gained reposts/bookmarked/pinned/views/community/quoteOf, and
+// social gained communities/pinnedCoins. Persisted v4 posts have none of
+// those, so a like-for-like restore would render "NaN reposts" and crash
+// the community lookups — bumping the key retires that state cleanly
+// rather than trying to migrate every nested post shape.
+const KEY = "zenbit-pro:state:v5";
 
 // ---------------------------------------------------------------- initial state
 
-const seedPosts = [
-  {
-    id: "p1",
-    author: { handle: "mara.eth", name: "Mara Osei", avatarUrl: "https://i.pravatar.cc/150?u=mara", initials: "MO" },
-    body: "Rotated a third of my $SOL into $USDC ahead of the unlock. Not advice — just don't want to be forced to sell later.",
-    tags: ["trades"],
-    trade: { coin: "SOL", direction: "Short", price: "142.50" },
-    type: "post",
-    createdAt: Date.now() - 1000 * 60 * 42,
-    likes: 34,
-    liked: false,
-    replies: [
-      { id: "r1", author: { handle: "toby", name: "Toby Vance", avatarUrl: "https://i.pravatar.cc/150?u=toby", initials: "TV" }, body: "Same. Sizing down beats timing it.", createdAt: Date.now() - 1000 * 60 * 30 },
-    ],
-  },
-  {
-    id: "p2",
-    author: { handle: "0xquiet", name: "Ines Duarte", avatarUrl: "https://i.pravatar.cc/150?u=ines", initials: "ID" },
-    body: "The only chart that matters this week is the $BTC funding rate.",
-    tags: ["analysis", "photos"],
-    image: "https://images.unsplash.com/photo-1621504450181-5d156f063311?auto=format&fit=crop&w=800&q=80",
-    type: "post",
-    createdAt: Date.now() - 1000 * 60 * 60 * 5,
-    likes: 128,
-    liked: true,
-    replies: [],
-  },
-  {
-    id: "p3",
-    author: { handle: "leo.base", name: "Leo Marchetti", avatarUrl: "https://i.pravatar.cc/150?u=leo", initials: "LM" },
-    body: "Reminder that a hardware wallet you never test is a hardware wallet you don't have. Do a small recovery drill.",
-    tags: ["security"],
-    image: "https://images.unsplash.com/photo-1639762681485-074b7f4ec672?auto=format&fit=crop&w=800&q=80",
-    type: "post",
-    createdAt: Date.now() - 1000 * 60 * 60 * 22,
-    likes: 291,
-    liked: false,
-    replies: [],
-  },
-  {
-    id: "p3.5",
-    author: { handle: "dogefather", name: "Doge Father", avatarUrl: "https://i.pravatar.cc/150?u=doge", initials: "DF" },
-    body: "When you buy the dip but it keeps dipping \ud83d\ude2d",
-    tags: ["memes"],
-    image: "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=800&q=80",
-    type: "post",
-    createdAt: Date.now() - 1000 * 60 * 60 * 24,
-    likes: 420,
-    liked: false,
-    replies: [],
-  },
-  {
-    id: "p4",
-    author: { handle: "toby", name: "Toby Vance", avatarUrl: "https://i.pravatar.cc/150?u=toby", initials: "TV" },
-    body: "Anyone else seeing this weird volume spike on ETH pairs across Asian hours? Looks like accumulation to me.",
-    tags: ["alpha", "analysis"],
-    type: "community",
-    trade: { coin: "ETH", direction: "Long", price: "2450.00" },
-    createdAt: Date.now() - 1000 * 60 * 60 * 2,
-    likes: 85,
-    liked: false,
-    replies: [],
-  }
-];
 
 const seedThreads = [
   {
@@ -126,11 +68,15 @@ function freshState() {
     social: {
       posts: seedPosts,
       draft: "",
-      following: ["mara.eth", "leo.base"],
-      followers: ["mara.eth", "0xquiet", "toby"],
+      following: ["mara.eth", "leo.base", "ava.charts", "priya.eth"],
+      followers: ["mara.eth", "0xquiet", "toby", "nk.defi", "zaid"],
       muted: [],
       blocked: [],
       reports: [],
+      // Communities the account has joined, and the coins pinned to the
+      // top of their social profile ("stock pinning").
+      communities: ["c-ta", "c-sec"],
+      pinnedCoins: ["bitcoin", "ethereum"],
     },
 
     chat: { threads: seedThreads, queued: [] },
@@ -159,6 +105,30 @@ function reducer(state, action) {
       if (action.isNewUser) {
         newState.wallet = { ...newState.wallet, holdings: [], transactions: [] };
         newState.session.user = { ...newState.session.user, name: action.name || "New User", email: action.email || "new@user.com", avatarUrl: null, avatarInitials: "NU" };
+        // NOT touching watchlist here: PickWatchlistScreen already ran and
+        // set it (to the person's picks, or explicitly to [] on skip)
+        // *before* this fires — session/signIn is dispatched at the very
+        // end of signup, from PasscodeScreen. Resetting it here would wipe
+        // out whatever they just picked.
+      } else {
+        // Logging in is a *returning* account, so it lands on the funded
+        // demo wallet — a real exchange login shows the holdings you
+        // already had. Without this, signing up (which correctly empties
+        // the wallet) and then logging back in left a returning user
+        // staring at a 0.00 balance and an empty portfolio, with no way to
+        // reach any of the app that depends on actually holding coins.
+        newState.wallet = {
+          ...newState.wallet,
+          holdings: state.wallet.holdings.length ? state.wallet.holdings : seedHoldings,
+          transactions: state.wallet.transactions.length ? state.wallet.transactions : seedTx,
+        };
+        newState.session.user = { ...account };
+        newState.watchlist = state.watchlist.length ? state.watchlist : seedWatchlist;
+        // A returning demo account is already verified, and already has its
+        // card — otherwise every fresh login walls Buy/Sell and Card back
+        // off behind onboarding the account has notionally already done.
+        newState.kyc = { ...state.kyc, status: "approved", rejectionReason: null };
+        newState.card = { ...state.card, ordered: true, balance: state.card.balance || 240.5 };
       }
       return newState;
     }
@@ -177,7 +147,10 @@ function reducer(state, action) {
 
     // ---- KYC
     case "kyc/submit":
-      return { ...state, kyc: { status: "pending", rejectionReason: null, documents: action.documents ?? [] } };
+      // `quality` ("good" | "blurry") is what the review outcome keys off —
+      // a good capture is approved, so verification isn't an arbitrary
+      // coin-flip that contradicts what the capture screen just said.
+      return { ...state, kyc: { status: "pending", rejectionReason: null, documents: action.documents ?? [], quality: action.quality ?? "good" } };
     case "kyc/approve":
       return { ...state, kyc: { ...state.kyc, status: "approved", rejectionReason: null } };
     case "kyc/reject":
@@ -253,6 +226,8 @@ function reducer(state, action) {
       };
     case "watchlist/clear":
       return { ...state, watchlist: [] };
+    case "watchlist/set":
+      return { ...state, watchlist: action.ids };
     case "alerts/add":
       return { ...state, priceAlerts: [...state.priceAlerts, action.alert] };
     case "alerts/remove":
@@ -272,10 +247,17 @@ function reducer(state, action) {
         tags: action.post.tags || [],
         image: action.post.image || null,
         trade: action.post.trade || null,
+        community: action.post.community || null,
+        quoteOf: action.post.quoteOf || null,
         type: action.post.type || "post",
         createdAt: Date.now(),
         likes: 0,
         liked: false,
+        reposts: 0,
+        reposted: false,
+        bookmarked: false,
+        pinned: false,
+        views: 0,
         replies: [],
         visibility: state.settings.postVisibility,
       };
@@ -297,6 +279,71 @@ function reducer(state, action) {
         social: {
           ...state.social,
           posts: state.social.posts.map((p) => (p.id === action.postId ? { ...p, replies: [...p.replies, action.reply] } : p)),
+        },
+      };
+    case "social/toggleReplyLike":
+      return {
+        ...state,
+        social: {
+          ...state.social,
+          posts: state.social.posts.map((p) =>
+            p.id === action.postId
+              ? {
+                  ...p,
+                  replies: p.replies.map((r) =>
+                    r.id === action.replyId ? { ...r, liked: !r.liked, likes: (r.likes ?? 0) + (r.liked ? -1 : 1) } : r
+                  ),
+                }
+              : p
+          ),
+        },
+      };
+    // Repost is a real state change with a real count, not a toast — same
+    // shape as like, since it's the same kind of reversible engagement.
+    case "social/toggleRepost":
+      return {
+        ...state,
+        social: {
+          ...state.social,
+          posts: state.social.posts.map((p) =>
+            p.id === action.id ? { ...p, reposted: !p.reposted, reposts: p.reposts + (p.reposted ? -1 : 1) } : p
+          ),
+        },
+      };
+    case "social/toggleBookmark":
+      return {
+        ...state,
+        social: {
+          ...state.social,
+          posts: state.social.posts.map((p) => (p.id === action.id ? { ...p, bookmarked: !p.bookmarked } : p)),
+        },
+      };
+    case "social/togglePin":
+      return {
+        ...state,
+        social: {
+          ...state.social,
+          posts: state.social.posts.map((p) => (p.id === action.id ? { ...p, pinned: !p.pinned } : p)),
+        },
+      };
+    case "social/toggleCommunity":
+      return {
+        ...state,
+        social: {
+          ...state.social,
+          communities: state.social.communities.includes(action.id)
+            ? state.social.communities.filter((c) => c !== action.id)
+            : [...state.social.communities, action.id],
+        },
+      };
+    case "social/togglePinnedCoin":
+      return {
+        ...state,
+        social: {
+          ...state.social,
+          pinnedCoins: state.social.pinnedCoins.includes(action.id)
+            ? state.social.pinnedCoins.filter((c) => c !== action.id)
+            : [...state.social.pinnedCoins, action.id],
         },
       };
     case "social/toggleFollow":
@@ -407,6 +454,7 @@ function mergeSaved(saved) {
       notifications: { ...base.settings.notifications, ...saved.settings?.notifications },
       appLock: { ...base.settings.appLock, ...saved.settings?.appLock },
     },
+    social: { ...base.social, ...saved.social },
   };
 }
 

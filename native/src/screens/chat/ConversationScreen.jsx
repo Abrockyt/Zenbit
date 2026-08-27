@@ -41,7 +41,7 @@ export default function ConversationScreen({ navigation, route }) {
 
   if (!thread) {
     return (
-      <Screen>
+      <Screen bg="black">
         <Header title="Messages" onBack={() => navigation.goBack()} />
         <EmptyState icon="inbox" title="Conversation not found" body="It may have been deleted." />
       </Screen>
@@ -49,7 +49,7 @@ export default function ConversationScreen({ navigation, route }) {
   }
 
   return (
-    <Screen scroll={false}>
+    <Screen scroll={false} bg="black">
       <Header title={thread.with.name} onBack={() => navigation.goBack()} right={<Avatar uri={thread.with.avatarUrl} initials={thread.with.initials} size={30} />} />
 
       <View style={{ flex: 1, justifyContent: "flex-end", gap: 8, paddingHorizontal: spacing.xl }}>
@@ -59,8 +59,21 @@ export default function ConversationScreen({ navigation, route }) {
           const mine = m.from === "me";
           return (
             <View key={m.id} style={{ alignSelf: mine ? "flex-end" : "flex-start", maxWidth: "78%" }}>
-              <View style={{ paddingHorizontal: 15, paddingVertical: 11, borderRadius: 20, backgroundColor: mine ? "#fff" : colors.surfaceCard, borderWidth: mine ? 0 : 1, borderColor: colors.borderSubtle }}>
-                <Text style={{ color: mine ? "#03150c" : colors.textPrimary, fontSize: 13 }}>{m.body}</Text>
+              {/* Bubbles need a genuinely opaque fill, not a translucent
+                  card tint — `surfaceCard` is ~5% white, which is nearly
+                  invisible against this screen's true-black background, so
+                  every "their" bubble read as bodyless text floating on
+                  black. Solid colours now: green for you (works on both
+                  themes since colors.up is always a saturated mid-tone),
+                  a real opaque dark card for them. */}
+              <View
+                style={{
+                  paddingHorizontal: 15, paddingVertical: 11, borderRadius: 20,
+                  backgroundColor: mine ? colors.up : colors.surfaceCardSolid,
+                  borderWidth: mine ? 0 : 1, borderColor: colors.borderDefault,
+                }}
+              >
+                <Text style={{ color: mine ? colors.ink0 : colors.textPrimary, fontSize: 13.5 }}>{m.body}</Text>
               </View>
               <Text style={{ color: colors.textTertiary, fontSize: 11, marginTop: 3, textAlign: mine ? "right" : "left" }}>{relativeTime(m.at)}</Text>
             </View>
@@ -69,7 +82,7 @@ export default function ConversationScreen({ navigation, route }) {
 
         {queuedHere.map((q, i) => (
           <View key={i} style={{ alignSelf: "flex-end", maxWidth: "78%", opacity: 0.55 }}>
-            <View style={{ paddingHorizontal: 15, paddingVertical: 11, borderRadius: 20, backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.borderStrong, borderStyle: "dashed" }}>
+            <View style={{ paddingHorizontal: 15, paddingVertical: 11, borderRadius: 20, backgroundColor: colors.surfaceCardSolid, borderWidth: 1, borderColor: colors.warn, borderStyle: "dashed" }}>
               <Text style={{ color: colors.textPrimary, fontSize: 13 }}>{q.body}</Text>
             </View>
             <Text style={{ color: colors.warn, fontSize: 11, marginTop: 3, textAlign: "right" }}>Queued — sends when you reconnect</Text>

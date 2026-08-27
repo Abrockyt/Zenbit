@@ -23,13 +23,14 @@ export default function ComposeScreen({ navigation }) {
 
   const send = async () => {
     await publish.run();
-    if (!publish.isError && !publish.isQueued) { toast("Post published."); navigation.navigate("Feed"); }
+    if (!publish.isError && !publish.isQueued) { toast("Post published."); navigation.navigate("MainTabs", { screen: "Feed" }); }
   };
 
   const toggleTag = (t) => setSelectedTags((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
 
   return (
     <Screen
+      bg="black"
       footer={
         <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg }}>
           <Button disabled={!draft.trim() || left < 0} loading={publish.isLoading} onPress={send}>Post</Button>
