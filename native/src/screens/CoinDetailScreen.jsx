@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, StyleSheet, View, Text, Image, Pressable, ScrollView } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useIsFocused } from "@react-navigation/native";
+// expo-router SDK 56+ ships its own navigation stack and no longer allows
+// importing @react-navigation/native directly — same hook, from expo-router.
+import { useIsFocused } from "expo-router";
 import { Screen, Button, IconButton, Skeleton, Avatar, colors, spacing, radius, fonts } from "../ui/kit";
 import CandlestickChart from "../ui/CandlestickChart";
 import { useCoinDetail, useCoinOHLC, useCoinVolume, useCoinTickers } from "../data/useCoinGecko";

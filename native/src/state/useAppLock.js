@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
+import { router, usePathname } from "expo-router";
 import { useApp } from "./store";
 
 // How long the app has to be backgrounded before coming back requires
@@ -18,19 +19,26 @@ const LOCK_AFTER_MS = 60_000;
  * Face ID / passcode toggles in Security settings had no effect on
  * anything. This is the missing trigger.
  *
- * Lives above the navigator (App.tsx) rather than in a screen because the
- * lock has to apply no matter which screen is open when the app is
- * backgrounded, so it takes a navigation ref instead of useNavigation().
+ * Lives above the navigator (app/_layout.tsx) rather than in a screen
+ * because the lock has to apply no matter which screen is open when the app
+ * is backgrounded. expo-router's `router` singleton and `usePathname()`
+ * stand in for the old navigationRef.isReady()/getCurrentRoute()/navigate()
+ * calls — `router` works outside a screen's own navigation tree the same
+ * way the ref did.
  */
-export function useAppLock(navigationRef) {
+export function useAppLock() {
   const { state, dispatch } = useApp();
   const backgroundedAt = useRef(null);
+  const pathname = usePathname();
 
-  // Read through a ref inside the AppState listener: the listener is
-  // registered once, so closing over state directly would freeze it at the
-  // values from first mount and the lock would use stale settings.
+  // Read through refs inside the AppState listener: the listener is
+  // registered once, so closing over state/pathname directly would freeze
+  // them at the values from first mount and the lock would use stale
+  // settings or an outdated "current screen" check.
   const latest = useRef(state);
   latest.current = state;
+  const path = useRef(pathname);
+  path.current = pathname;
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (next) => {
@@ -51,13 +59,12 @@ export function useAppLock(navigationRef) {
       // flow to a passcode screen for an account that doesn't exist yet
       // would strand them with no way forward.
       if (!enabled || !s.session.signedIn || away < LOCK_AFTER_MS) return;
-      if (!navigationRef.isReady()) return;
-      if (navigationRef.getCurrentRoute()?.name === "AppLock") return;
+      if (path.current === "/AppLock") return;
 
       dispatch({ type: "session/lock" });
-      navigationRef.navigate("AppLock");
+      router.push("/AppLock");
     });
 
     return () => sub.remove();
-  }, [dispatch, navigationRef]);
+  }, [dispatch]);
 }

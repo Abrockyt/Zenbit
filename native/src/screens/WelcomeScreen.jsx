@@ -99,6 +99,20 @@ export default function WelcomeScreen({ navigation }) {
           scrollEnabled={false}
           androidLayerType="hardware"
           originWhitelist={["*"]}
+          // Hardened after the SDK 54->57 upgrade (react-native-webview
+          // 13.15->13.16, and RN's New Architecture is the default from
+          // this SDK on) — the Spline scene stopped rendering on-device
+          // after that jump. These are the standard fixes for a WebGL/
+          // canvas-heavy embedded page going blank post-upgrade: explicit
+          // JS/DOM-storage/media flags rather than relying on defaults
+          // that can shift between library versions, since Spline's
+          // renderer depends on all three actually being on.
+          javaScriptEnabled
+          domStorageEnabled
+          allowsInlineMediaPlayback
+          mediaPlaybackRequiresUserAction={false}
+          mixedContentMode="always"
+          setSupportMultipleWindows={false}
         />
       </View>
       <LinearGradient colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.8)", "#000"]} locations={[0, 0.25, 1]} style={styles.scrim} />
