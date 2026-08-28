@@ -1,5 +1,5 @@
 import { View, FlatList, Pressable, Text } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../ui/IconCompat";
 import { Screen, Header, PriceRow, EmptyState, Button, SkeletonList, colors, spacing } from "../ui/kit";
 import { useMarkets } from "../data/useCoinGecko";
 import { useApp } from "../state/store";

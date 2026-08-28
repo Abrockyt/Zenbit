@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, View, Text, Pressable, FlatList } from "react-native";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "../../ui/IconCompat";
 import { Screen, Header, TextField, IconButton, Avatar, EmptyState, Banner, colors, spacing, radius, fonts } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../ui/IconCompat";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Screen, TabBar, TextField, Button, Sheet, ResultDialog, Banner, colors, spacing, radius, gradients, fonts } from "../ui/kit";

@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../../ui/IconCompat";
 import { Screen, Header, Row, colors } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 

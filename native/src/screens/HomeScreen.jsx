@@ -3,7 +3,7 @@ import { Animated, View, Text, FlatList, Pressable, Image, ScrollView, StyleShee
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../ui/IconCompat";
 import { Screen, TabBar, IconButton, SegmentedControl, Avatar, SkeletonList, Button, GlassAction, colors, spacing, radius, fonts } from "../ui/kit";
 import { isLightTheme } from "../theme";
 import { useApp } from "../state/store";
@@ -286,8 +286,8 @@ export default function HomeScreen({ navigation }) {
           totalChange={totalChange}
           currency={currency}
           user={user}
-          onSearch={() => navigation.navigate("MainTabs", { screen: "Market" })}
-          onProfile={() => navigation.navigate("MainTabs", { screen: "Profile" })}
+          onSearch={() => navigation.navigate("Market")}
+          onProfile={() => navigation.navigate("Profile")}
         />
       }
     >
@@ -304,6 +304,11 @@ export default function HomeScreen({ navigation }) {
         <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
           <IconButton icon="bell" size={18} onPress={() => navigation.navigate("RecentActivity")} badge={state.wallet.transactions.some((t) => t.status === "pending")} />
           <IconButton icon="search" size={18} onPress={() => navigation.navigate("Market")} />
+          {/* Settings has no other entry point now that Profile (where it
+              used to live as a Row) isn't a persistent tab any more — this
+              keeps it reachable directly from Home instead of requiring a
+              detour through Profile first. */}
+          <IconButton icon="settings" size={18} onPress={() => navigation.navigate("Settings")} />
           <Pressable onPress={() => navigation.navigate("AiChat")} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: colors.textSecondary, fontSize: 13 }}>AI</Text>
           </Pressable>

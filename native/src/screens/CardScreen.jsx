@@ -1,5 +1,5 @@
 import { View, Text, Pressable, Image } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../ui/IconCompat";
 import { LinearGradient } from "expo-linear-gradient";
 import { Screen, TabBar, IconButton, SectionHeader, Row, Button, Banner, Skeleton, colors, spacing, radius, gradients, fonts } from "../ui/kit";
 import { account } from "../data/mockWallet";

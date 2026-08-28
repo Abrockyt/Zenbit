@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { View, Text, FlatList, Pressable, Image, ScrollView } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../../ui/IconCompat";
 import { Screen, TabBar, IconButton, TextField, Avatar, Sheet, Button, Banner, EmptyState, colors, spacing, radius, fonts } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";

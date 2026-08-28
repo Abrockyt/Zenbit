@@ -3,7 +3,10 @@
 // is ambiguous — React Navigation has to resolve the name across navigators
 // — and in practice it did not pop the stack, so back buttons that targeted
 // a tab silently did nothing.
-const TAB_ROUTES = ["Home", "Market", "Swap", "Card", "Feed", "Profile"];
+// Profile isn't a tab any more (see app/(tabs)/_layout.ios.tsx) — it's a
+// plain root-stack screen now, so it falls through to the normal
+// navigation.navigate(route, params) branch below like any other screen.
+const TAB_ROUTES = ["Home", "Market", "Swap", "Card", "Feed"];
 
 /**
  * Navigate to a route that might be either a root-stack screen or a tab,

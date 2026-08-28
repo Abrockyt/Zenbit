@@ -3,7 +3,8 @@ import { Animated, Easing, View, Text, Pressable, StyleSheet, ScrollView, Switch
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "./IconCompat";
 import { colors, spacing, radius, gradients, fonts, shadow, onThemeChange, isLightTheme } from "../theme";
 import RadialBackground from "./RadialBackground";
 import AnimatedDots from "./AnimatedDots";
@@ -516,13 +517,16 @@ export function Dots({ count, filled, tone }) {
 
 // Real floating glass tab bar — matches the web TabBar.jsx: rounded pill,
 // blurred glass background, a sliding indicator behind the active icon.
+// Profile deliberately isn't a tab — see app/(tabs)/_layout.ios.tsx for why
+// (keeps this list at 5 so iOS's real tab bar never collapses into "More").
+// Reached instead via the avatar/settings icon on Home, same on every
+// platform.
 const TABS = [
   { key: "Home", icon: "home" },
   { key: "Market", icon: "bar-chart-2" },
   { key: "Swap", icon: "repeat" },
   { key: "Card", icon: "credit-card" },
   { key: "Feed", icon: "users" },
-  { key: "Profile", icon: "user" },
 ];
 /**
  * Genuinely different per platform, not one blur trick used everywhere.

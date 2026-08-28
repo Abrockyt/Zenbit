@@ -1,5 +1,5 @@
-import Screen from "../../src/screens/ProfileScreen";
-import { useShimNavigation, useShimRoute } from "../../src/lib/routerShim";
+import Screen from "../src/screens/ProfileScreen";
+import { useShimNavigation, useShimRoute } from "../src/lib/routerShim";
 
 export default function Route() {
   const navigation = useShimNavigation();

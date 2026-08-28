@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../ui/IconCompat";
 import * as Clipboard from "expo-clipboard";
 import { Screen, TabBar, IconButton, SectionHeader, Row, Avatar, Sheet, Button, Skeleton, colors, spacing, radius, fonts } from "../ui/kit";
 import { useApp, useToast } from "../state/store";

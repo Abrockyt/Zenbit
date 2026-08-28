@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Animated, View, Text, Pressable, Image } from "react-native";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "../../ui/IconCompat";
 import { colors, spacing, radius, fonts } from "../../ui/kit";
 import { Avatar } from "../../ui/kit";
 import { relativeTime } from "../../lib/time";

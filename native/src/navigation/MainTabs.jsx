@@ -1,7 +1,7 @@
 import { Platform, StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { BlurView } from "expo-blur";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../ui/IconCompat";
 import { colors, fonts, isLightTheme } from "../theme";
 import { useTheme } from "../state/ThemeProvider";
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../../ui/IconCompat";
 import { Screen, Header, Button, colors, spacing, radius } from "../../ui/kit";
 import { goTo } from "../../lib/nav";
 import { useApp, useToast } from "../../state/store";

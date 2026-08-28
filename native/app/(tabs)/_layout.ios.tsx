@@ -15,11 +15,19 @@ import { useTheme } from "../../src/state/ThemeProvider";
  * no real equivalent of iOS's glass material, so it keeps its own look
  * rather than an imitation of this one.
  *
- * Route names below (Home, Market, Swap, Card, Feed, Profile) are the tab
- * screen filenames in this folder — they also have to match every bare
+ * Route names below (Home, Market, Swap, Card, Feed) are the tab screen
+ * filenames in this folder — they also have to match every bare
  * navigation.navigate("Card")-style call already in the screens themselves,
  * since sibling-tab navigation by name still works the same way it did
  * under the old Tab.Navigator.
+ *
+ * Only 5 tabs, deliberately: iOS's real UITabBarController shows tabs 1-4
+ * directly and collapses tab 5+ into a system "More" screen once there are
+ * more than 5 — with the earlier 6th tab (Profile) that pushed Feed/Social
+ * behind "More" too. Profile is reachable from the avatar in Home's header
+ * and its own settings icon instead (a root-stack push, not a tab), which
+ * keeps Social as a directly-visible tab and avoids the native bar ever
+ * needing to collapse anything.
  */
 export default function TabLayout() {
   // Re-render on a theme switch so the tint colour follows the palette.
@@ -50,11 +58,6 @@ export default function TabLayout() {
       <NativeTabs.Trigger name="Feed">
         <NativeTabs.Trigger.Icon sf={{ default: "person.2", selected: "person.2.fill" }} md="groups" />
         <NativeTabs.Trigger.Label>Social</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="Profile">
-        <NativeTabs.Trigger.Icon sf={{ default: "person", selected: "person.fill" }} md="person" />
-        <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );

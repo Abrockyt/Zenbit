@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { View, Text, FlatList } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../../ui/IconCompat";
 import { Screen, Header, Row, TextField, colors, spacing } from "../../ui/kit";
 import { useApp } from "../../state/store";
 

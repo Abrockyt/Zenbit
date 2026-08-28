@@ -45,7 +45,6 @@ export default function TabLayout() {
       <Tabs.Screen name="Swap" />
       <Tabs.Screen name="Card" />
       <Tabs.Screen name="Feed" />
-      <Tabs.Screen name="Profile" />
     </Tabs>
   );
 }

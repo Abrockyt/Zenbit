@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../ui/IconCompat";
 import { Screen, Header, Button, Row, Banner, EmptyState, colors, spacing, radius } from "../ui/kit";
 import { useApp, useToast } from "../state/store";
 import { useAsyncAction } from "../state/useAsyncAction";

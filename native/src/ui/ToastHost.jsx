@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, View, Text, Pressable, Easing } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "./IconCompat";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, spacing, radius, fonts } from "../theme";
 import { useApp } from "../state/store";

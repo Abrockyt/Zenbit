@@ -1,5 +1,5 @@
 import { View, Text, Image, Pressable, FlatList } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../../ui/IconCompat";
 import { Screen, Header, EmptyState, Button, colors, spacing, radius, fonts } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { COMMUNITY_BY_ID } from "../../data/communities";

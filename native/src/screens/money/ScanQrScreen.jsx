@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../../ui/IconCompat";
 import { Screen, Header, Button, colors, spacing, radius } from "../../ui/kit";
 
 // A real camera permission prompt would be dishonest in a demo that can't
