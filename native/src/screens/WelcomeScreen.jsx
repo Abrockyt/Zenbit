@@ -113,6 +113,36 @@ export default function WelcomeScreen({ navigation }) {
           mediaPlaybackRequiresUserAction={false}
           mixedContentMode="always"
           setSupportMultipleWindows={false}
+          // Diagnostics only, temporary: the WebView's own JS context is
+          // isolated from RN's — a Spline load failure inside the page
+          // never reached Metro's console before, so every earlier fix
+          // attempt was a guess with no way to confirm the actual cause.
+          // These three surface the real error into the Metro terminal on
+          // a live device/dev-client connection (not possible under Expo
+          // Go, which is what every earlier attempt was limited to).
+          onError={(e) => console.warn("[Spline WebView] onError:", JSON.stringify(e.nativeEvent))}
+          onHttpError={(e) => console.warn("[Spline WebView] onHttpError:", JSON.stringify(e.nativeEvent))}
+          onMessage={(e) => console.warn("[Spline WebView] page console:", e.nativeEvent.data)}
+          injectedJavaScriptBeforeContentLoaded={`
+            (function () {
+              function send(kind, args) {
+                try {
+                  window.ReactNativeWebView.postMessage(kind + ": " + Array.from(args).map(String).join(" "));
+                } catch (e) {}
+              }
+              window.onerror = function (message, source, lineno, colno, error) {
+                send("onerror", [message, source, lineno, colno, error && error.stack]);
+              };
+              window.addEventListener("unhandledrejection", function (e) {
+                send("unhandledrejection", [e.reason]);
+              });
+              var origError = console.error;
+              console.error = function () { send("console.error", arguments); origError.apply(console, arguments); };
+              var origWarn = console.warn;
+              console.warn = function () { send("console.warn", arguments); origWarn.apply(console, arguments); };
+              true;
+            })();
+          `}
         />
       </View>
       <LinearGradient colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.8)", "#000"]} locations={[0, 0.25, 1]} style={styles.scrim} />

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, View, Text, FlatList, Pressable, Image, ScrollView, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "../ui/IconCompat";
@@ -28,12 +27,14 @@ const COLLAPSE_AT = 130;
 // instead of scrolling away with the rest of the header — the compact bar
 // is meant to replace both, not just the balance.
 function CompactHeader({ opacity, revealed, total, totalChange, currency, user, onSearch, onProfile }) {
-  const insets = useSafeAreaInsets();
   const up = totalChange >= 0;
   return (
     <Animated.View
       pointerEvents={revealed ? "auto" : "none"}
-      style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 20, opacity, paddingTop: insets.top, overflow: "hidden" }}
+      // No manual paddingTop: insets.top here — this sits inside Screen's
+      // own SafeAreaView, which already reserves that space, so adding it
+      // again pushed this well below the real top of the screen.
+      style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 20, opacity, overflow: "hidden" }}
     >
       {/* Real backdrop blur, not a flat fill — this sits directly over
           content that's actively scrolling underneath it, which is exactly

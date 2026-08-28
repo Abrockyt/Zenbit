@@ -35,27 +35,35 @@ export default function TabLayout() {
 
   return (
     <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.up}>
-      <NativeTabs.Trigger name="Home">
+      {/* disableAutomaticContentInsets on every trigger: the native tab
+          controller applies its own top/bottom safe-area content insets by
+          default, on top of the ones this app's own <Screen>/SafeAreaView
+          already computes in JS for every screen — the double-inset is what
+          pushed Home's content (and its absolutely-positioned compact
+          scroll header) down well past where it should sit. Screen already
+          handles safe areas correctly on its own, so the native side's
+          automatic version is redundant here. */}
+      <NativeTabs.Trigger name="Home" disableAutomaticContentInsets>
         <NativeTabs.Trigger.Icon sf={{ default: "house", selected: "house.fill" }} md="home" />
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="Market">
+      <NativeTabs.Trigger name="Market" disableAutomaticContentInsets>
         <NativeTabs.Trigger.Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} md="bar_chart" />
         <NativeTabs.Trigger.Label>Market</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="Swap">
+      <NativeTabs.Trigger name="Swap" disableAutomaticContentInsets>
         <NativeTabs.Trigger.Icon sf="arrow.triangle.2.circlepath" md="swap_horiz" />
         <NativeTabs.Trigger.Label>Swap</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="Card">
+      <NativeTabs.Trigger name="Card" disableAutomaticContentInsets>
         <NativeTabs.Trigger.Icon sf={{ default: "creditcard", selected: "creditcard.fill" }} md="credit_card" />
         <NativeTabs.Trigger.Label>Card</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="Feed">
+      <NativeTabs.Trigger name="Feed" disableAutomaticContentInsets>
         <NativeTabs.Trigger.Icon sf={{ default: "person.2", selected: "person.2.fill" }} md="groups" />
         <NativeTabs.Trigger.Label>Social</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
