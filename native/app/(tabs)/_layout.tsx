@@ -1,55 +1,51 @@
-import { NativeTabs } from "expo-router/unstable-native-tabs";
-import { colors } from "../../src/theme";
+import { View } from "react-native";
+import { Tabs } from "expo-router";
+import { TabBar } from "../../src/ui/kit";
 import { useTheme } from "../../src/state/ThemeProvider";
 
 /**
- * The real native iOS 26 Liquid Glass tab bar (a genuine
- * UITabBarController-backed bar, not a hand-built BlurView imitation) and
- * Android's own Material 3 bar — expo-router/unstable-native-tabs is the
- * only way to get either, since it's tied to file-based routing rather than
- * a component you can drop into a classic @react-navigation stack.
+ * Android (and web) fallback: the floating pill tab bar this app used
+ * before the iOS NativeTabs migration — Android has no real equivalent of
+ * iOS's UIVisualEffectView material, so rather than fake glass there, it
+ * gets its own genuine "floating surface" look (Material elevation) via the
+ * same TabBar/GlassPanel pair used everywhere else in the app.
  *
- * Route names below (Home, Market, Swap, Card, Feed, Profile) are the tab
- * screen filenames in this folder — they also have to match every bare
- * navigation.navigate("Card")-style call already in the screens themselves,
- * since sibling-tab navigation by name still works the same way it did
- * under the old Tab.Navigator.
+ * iOS gets a completely different file for this layout — app/(tabs)/
+ * _layout.ios.tsx, using the real native Liquid Glass NativeTabs — Metro's
+ * platform-extension resolution picks that one for iOS automatically and
+ * falls back to this plain _layout.tsx for every other platform, so no
+ * runtime Platform.select branching is needed here.
+ *
+ * The built-in tab bar is hidden (tabBarStyle: display none) since `layout`
+ * renders TabBar in its place, positioned over `children` (the active
+ * screen) exactly like it always was.
  */
 export default function TabLayout() {
-  // Re-render on a theme switch so the tint colour follows the palette.
+  // Re-render on a theme switch so the pill's tint/border follow the
+  // palette — this layout doesn't get remounted the way an individual
+  // Screen's children do, so without consuming this it would stay pinned
+  // to whichever theme was active on first mount.
   useTheme();
 
   return (
-    <NativeTabs minimizeBehavior="onScrollDown" tintColor={colors.up}>
-      <NativeTabs.Trigger name="Home">
-        <NativeTabs.Trigger.Icon sf={{ default: "house", selected: "house.fill" }} md="home" />
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="Market">
-        <NativeTabs.Trigger.Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} md="bar_chart" />
-        <NativeTabs.Trigger.Label>Market</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="Swap">
-        <NativeTabs.Trigger.Icon sf="arrow.triangle.2.circlepath" md="swap_horiz" />
-        <NativeTabs.Trigger.Label>Swap</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="Card">
-        <NativeTabs.Trigger.Icon sf={{ default: "creditcard", selected: "creditcard.fill" }} md="credit_card" />
-        <NativeTabs.Trigger.Label>Card</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="Feed">
-        <NativeTabs.Trigger.Icon sf={{ default: "person.2", selected: "person.2.fill" }} md="groups" />
-        <NativeTabs.Trigger.Label>Social</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="Profile">
-        <NativeTabs.Trigger.Icon sf={{ default: "person", selected: "person.fill" }} md="person" />
-        <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { display: "none" },
+      }}
+      layout={({ state, navigation, children }) => (
+        <View style={{ flex: 1 }}>
+          {children}
+          <TabBar navigation={navigation} active={state.routeNames[state.index]} />
+        </View>
+      )}
+    >
+      <Tabs.Screen name="Home" />
+      <Tabs.Screen name="Market" />
+      <Tabs.Screen name="Swap" />
+      <Tabs.Screen name="Card" />
+      <Tabs.Screen name="Feed" />
+      <Tabs.Screen name="Profile" />
+    </Tabs>
   );
 }
