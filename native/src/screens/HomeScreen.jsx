@@ -3,7 +3,7 @@ import { Animated, View, Text, FlatList, Pressable, Image, ScrollView, StyleShee
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "../ui/IconCompat";
-import { Screen, TabBar, IconButton, SegmentedControl, Avatar, SkeletonList, Button, GlassAction, colors, spacing, radius, fonts } from "../ui/kit";
+import { Screen, TabBar, IconButton, SegmentedControl, Avatar, SkeletonList, Button, GlassAction, GlassPanel, colors, spacing, radius, fonts } from "../ui/kit";
 import { isLightTheme } from "../theme";
 import { useApp } from "../state/store";
 import { useMarkets } from "../data/useCoinGecko";
@@ -62,8 +62,10 @@ function CompactHeader({ opacity, revealed, total, totalChange, currency, user, 
             {compactMoney(total, currency)}
           </Text>
         </View>
-        <Pressable onPress={onSearch} hitSlop={10} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" }}>
-          <Feather name="search" size={15} color={colors.textPrimary} />
+        <Pressable onPress={onSearch} hitSlop={10} style={{ width: 32, height: 32 }}>
+          <GlassPanel interactive radius={16} style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}>
+            <Feather name="search" size={15} color={colors.textPrimary} />
+          </GlassPanel>
         </Pressable>
       </View>
     </Animated.View>
@@ -295,12 +297,11 @@ export default function HomeScreen({ navigation }) {
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
         {/* Was a bare View — an avatar and a name that look exactly like an
             account button but did nothing when tapped. Opens Profile now. */}
-        <Pressable
-          onPress={() => navigation.navigate("Profile")}
-          style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: colors.surfaceRaised, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 6, paddingRight: 14, opacity: pressed ? 0.6 : 1 })}
-        >
-          <Avatar uri={user?.avatarUrl} initials={user?.avatarInitials} size={28} />
-          <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: fonts.medium }}>{user?.name ? user.name.split(" ")[0].toLowerCase() : "user"}crypto</Text>
+        <Pressable onPress={() => navigation.navigate("Profile")} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+          <GlassPanel interactive radius={999} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, paddingHorizontal: 6, paddingRight: 14 }}>
+            <Avatar uri={user?.avatarUrl} initials={user?.avatarInitials} size={28} />
+            <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: fonts.medium }}>{user?.name ? user.name.split(" ")[0].toLowerCase() : "user"}crypto</Text>
+          </GlassPanel>
         </Pressable>
         <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
           <IconButton icon="bell" size={18} onPress={() => navigation.navigate("RecentActivity")} badge={state.wallet.transactions.some((t) => t.status === "pending")} />
@@ -310,8 +311,10 @@ export default function HomeScreen({ navigation }) {
               keeps it reachable directly from Home instead of requiring a
               detour through Profile first. */}
           <IconButton icon="settings" size={18} onPress={() => navigation.navigate("Settings")} />
-          <Pressable onPress={() => navigation.navigate("AiChat")} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surfaceRaised, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: colors.textSecondary, fontSize: 13 }}>AI</Text>
+          <Pressable onPress={() => navigation.navigate("AiChat")} style={{ width: 40, height: 40 }}>
+            <GlassPanel interactive radius={20} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>AI</Text>
+            </GlassPanel>
           </Pressable>
         </View>
       </View>

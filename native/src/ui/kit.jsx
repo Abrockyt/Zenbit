@@ -3,6 +3,7 @@ import { Animated, Easing, View, Text, Pressable, StyleSheet, ScrollView, Switch
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
+import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { Ionicons } from "@expo/vector-icons";
 import { Feather } from "./IconCompat";
 import { colors, spacing, radius, gradients, fonts, shadow, onThemeChange, isLightTheme } from "../theme";
@@ -245,10 +246,16 @@ export function IconButton({ icon, activeIcon, active, onPress, badge, size = 20
   const name = active && activeIcon ? activeIcon : icon;
 
   return (
-    <AnimatedPressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} style={[pressStyle, styles.iconButton]} hitSlop={8}>
-      <Animated.View style={{ transform: [{ scale: pop }] }}>
-        <Glyph name={name} size={size} color={active ? activeColor : colors.textPrimary} />
-      </Animated.View>
+    <AnimatedPressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} style={[pressStyle, styles.iconButtonWrap]} hitSlop={8}>
+      {/* Same real per-platform glass as everywhere else (GlassAction, the
+          Android/web pill tab bar) — this circle used to be a flat solid
+          fill, the only interactive-icon shape in the app that wasn't
+          glass despite being one of the most common ones on screen. */}
+      <GlassPanel interactive radius={20} style={styles.iconButton}>
+        <Animated.View style={{ transform: [{ scale: pop }] }}>
+          <Glyph name={name} size={size} color={active ? activeColor : colors.textPrimary} />
+        </Animated.View>
+      </GlassPanel>
       {badge ? <View style={styles.badgeDot} /> : null}
     </AnimatedPressable>
   );
@@ -558,7 +565,23 @@ const TABS = [
  * scrolling content, so there's nothing extra to paint in, and iOS keeps
  * its real material this time.
  */
-function GlassPanel({ radius: r, style, children }) {
+export function GlassPanel({ radius: r, style, children, interactive }) {
+  // Real iOS 26 Liquid Glass (UIGlassEffect via expo-glass-effect) where the
+  // OS actually supports it — not the older UIVisualEffectView blur
+  // materials used everywhere else in this file, which look like glass but
+  // aren't the literal new effect. `isInteractive` gets the real native
+  // touch-highlight/press response iOS 26's own glass buttons have, so a
+  // Pressable wrapping this still feels native rather than just looking it.
+  if (Platform.OS === "ios" && isLiquidGlassAvailable()) {
+    return (
+      <GlassView glassEffectStyle="regular" isInteractive={!!interactive} style={[{ borderRadius: r, overflow: "hidden" }, style]}>
+        {children}
+      </GlassView>
+    );
+  }
+  // iOS below 26: no real Liquid Glass API to call, so this falls back to
+  // the same genuine UIVisualEffectView material the rest of the app uses
+  // — still real native glass, just the previous generation of it.
   if (Platform.OS === "ios") {
     return (
       <View style={[{ borderRadius: r, overflow: "hidden", borderWidth: 1, borderColor: colors.borderDefault }, style]}>
@@ -637,7 +660,7 @@ export function GlassAction({ icon, label, onPress, size = 58 }) {
       style={{ alignItems: "center", gap: 8 }}
     >
       <Animated.View style={{ transform: [{ scale }] }}>
-        <GlassPanel radius={size / 2} style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+        <GlassPanel interactive radius={size / 2} style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
           <Feather name={icon} size={22} color={colors.textPrimary} />
         </GlassPanel>
       </Animated.View>
@@ -762,7 +785,10 @@ const makeStyles = () => StyleSheet.create({
   textButton: { paddingVertical: 6, paddingHorizontal: 4 },
   textButtonLabel: { color: colors.up, fontSize: 13, fontFamily: fonts.medium },
 
-  iconButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceRaised },
+  // wrap: just the hit target/positioning; the visual circle (glass on iOS,
+  // solid+elevation on Android/web) is drawn by GlassPanel inside it.
+  iconButtonWrap: { width: 40, height: 40 },
+  iconButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   badgeDot: { position: "absolute", top: 8, right: 9, width: 7, height: 7, borderRadius: 4, backgroundColor: colors.down },
 
   row: { flexDirection: "row", alignItems: "center", paddingVertical: 14, gap: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderSubtle },
