@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Feather } from "../../ui/IconCompat";
-import { Screen, Header, Button, TextField, Row, Banner, EmptyState, Skeleton, Spinner, colors, spacing, radius, fonts } from "../../ui/kit";
+import { Screen, Header, Button, TextField, Row, Banner, EmptyState, Skeleton, Spinner, InfoButton, colors, spacing, radius, fonts } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";
 import { useMarkets } from "../../data/useCoinGecko";
@@ -294,15 +294,30 @@ export default function TradeFlowScreen({ navigation, route }) {
         <View style={{ padding: 20, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, gap: 14, marginBottom: spacing.md }}>
           {rows.map(([k, v], i) => (
             <View key={k} style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ color: i === rows.length - 1 ? colors.textPrimary : colors.textTertiary, fontSize: 13 }}>{k}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ color: i === rows.length - 1 ? colors.textPrimary : colors.textTertiary, fontSize: 13 }}>{k}</Text>
+                {k.startsWith("Fee") && (
+                  <InfoButton
+                    label="Fee"
+                    body="Zenbit's fee for this trade — covers routing the order and settling it. It's already included in the total shown below, so there's nothing extra to pay."
+                  />
+                )}
+              </View>
               <Text style={{ color: colors.textPrimary, fontSize: 13 }}>{v}</Text>
             </View>
           ))}
         </View>
 
-        <Text style={{ color: expired ? colors.down : colors.textTertiary, fontSize: 12, textAlign: "center", marginVertical: spacing.md }}>
-          {expired ? "Price expired" : `Price locked for ${lock}s`}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginVertical: spacing.md }}>
+          <Text style={{ color: expired ? colors.down : colors.textTertiary, fontSize: 12 }}>
+            {expired ? "Price expired" : `Price locked for ${lock}s`}
+          </Text>
+          <InfoButton
+            label="Price locked"
+            body={`The price above is held for you for a short window so the deal you're confirming is the deal you get. If it runs out before you confirm, tap "Refresh price" to lock in the current rate again.`}
+            size={13}
+          />
+        </View>
       </Screen>
     );
   }

@@ -154,7 +154,7 @@ export default function ProfileScreen({ navigation }) {
       <SectionHeader title="More" />
       <Row icon="trending-up" title="Price alerts" onPress={() => navigation.navigate("PriceAlerts")} />
       <Row icon="alert-triangle" title="Report and safety" onPress={() => navigation.navigate("Reports")} />
-      <Row icon="help-circle" title="Help centre" onPress={() => toast("Support will reply by email within a day.")} />
+      <Row icon="help-circle" title="Help centre" onPress={() => navigation.navigate("HelpCentre")} />
       <Row icon="settings" title="All settings" onPress={() => navigation.navigate("Settings")} />
 
       {/* Log out lived only inside Settings, three taps deep, where nobody

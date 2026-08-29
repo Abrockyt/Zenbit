@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Feather } from "../../ui/IconCompat";
-import { Screen, Header, Button, TextField, Banner, Row, EmptyState, colors, spacing, radius } from "../../ui/kit";
+import { Screen, Header, Button, TextField, Banner, Row, EmptyState, InfoButton, colors, spacing, radius } from "../../ui/kit";
 import { useApp, useToast } from "../../state/store";
 import { useAsyncAction } from "../../state/useAsyncAction";
 import { useMarkets } from "../../data/useCoinGecko";
@@ -131,7 +131,15 @@ export default function SendScreen({ navigation, route }) {
         <View style={{ padding: 20, borderRadius: radius.lg, backgroundColor: colors.surfaceCard, borderWidth: 1, borderColor: colors.borderSubtle, gap: 14, marginBottom: spacing.md }}>
           {rows.map(([k, v]) => (
             <View key={k} style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ color: colors.textTertiary, fontSize: 13 }}>{k}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ color: colors.textTertiary, fontSize: 13 }}>{k}</Text>
+                {k === "Network fee" && (
+                  <InfoButton
+                    label="Network fee"
+                    body="Paid to the network that processes this transaction, not to Zenbit. It's fixed once you reach this review step — it won't change if you confirm."
+                  />
+                )}
+              </View>
               <Text style={{ color: colors.textPrimary, fontSize: 13, textAlign: "right" }}>{v}</Text>
             </View>
           ))}

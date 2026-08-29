@@ -4,7 +4,7 @@ import { Feather } from "../ui/IconCompat";
 // expo-router SDK 56+ ships its own navigation stack and no longer allows
 // importing @react-navigation/native directly — same hook, from expo-router.
 import { useIsFocused } from "expo-router";
-import { Screen, Button, IconButton, Skeleton, Avatar, colors, spacing, radius, fonts } from "../ui/kit";
+import { Screen, Button, IconButton, Skeleton, Avatar, InfoButton, colors, spacing, radius, fonts } from "../ui/kit";
 import CandlestickChart from "../ui/CandlestickChart";
 import { useCoinDetail, useCoinOHLC, useCoinVolume, useCoinTickers } from "../data/useCoinGecko";
 import { useApp, useToast } from "../state/store";
@@ -320,8 +320,10 @@ export default function CoinDetailScreen({ navigation, route }) {
               )}
             </View>
 
-            {/* Indicator row */}
-            <View style={{ flexDirection: "row", gap: 18, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
+            {/* Indicator row — six-letter acronyms with zero explanation
+                anywhere else in the app; one info button covers all of them
+                rather than crowding six tiny icons into this tight row. */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 18, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.borderSubtle }}>
               {INDICATORS.map((ind) => (
                 <Pressable key={ind.key} onPress={() => setIndicator(ind.key)} hitSlop={6}>
                   <Text style={{ color: indicator === ind.key ? colors.textPrimary : colors.textTertiary, fontSize: 12.5, fontFamily: indicator === ind.key ? fonts.semibold : fonts.regular }}>
@@ -329,6 +331,10 @@ export default function CoinDetailScreen({ navigation, route }) {
                   </Text>
                 </Pressable>
               ))}
+              <InfoButton
+                label="Chart indicators"
+                body={"MA — Moving Average: the average close price over a set window, smoothing out day-to-day noise.\n\nEMA — Exponential Moving Average: like MA, but weights recent candles more heavily so it reacts faster to new moves.\n\nBOLL — Bollinger Bands: a band around the price sized by recent volatility. Price near the edges suggests it's stretched relative to its recent range.\n\nSAR — Parabolic SAR: dots that flip above or below the price to flag a possible trend reversal.\n\nAVL — Average Volume Line: how trading volume compares to its recent average, useful for spotting unusually active days.\n\nSUPER — Supertrend: a trend-following line derived from volatility that turns green in an uptrend and red in a downtrend."}
+              />
             </View>
 
             {/* Markets / Depth / Network */}

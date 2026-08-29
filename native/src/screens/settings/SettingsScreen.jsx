@@ -96,6 +96,7 @@ export default function SettingsScreen({ navigation }) {
       <Row icon="bell" title="Notifications" subtitle={`${notifOn} of 5 on`} onPress={() => navigation.navigate("NotificationSettings")} />
       <Row icon="trending-up" title="Price alerts" subtitle={String(state.priceAlerts.length)} onPress={() => navigation.navigate("PriceAlerts")} />
       <Row icon="refresh-cw" title="Display currency" subtitle={s.currency.toUpperCase()} onPress={() => navigation.navigate("Currency")} />
+      <Row icon="help-circle" title="Help centre" onPress={() => navigation.navigate("HelpCentre")} />
 
       <View style={{ height: spacing.md }} />
       <Row icon="log-out" title="Log out" danger onPress={() => setConfirmSignOut(true)} />

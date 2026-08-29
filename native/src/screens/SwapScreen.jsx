@@ -3,7 +3,7 @@ import { View, Text, Pressable, ActivityIndicator, StyleSheet } from "react-nati
 import { Feather } from "../ui/IconCompat";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import { Screen, TabBar, TextField, Button, Sheet, ResultDialog, Banner, colors, spacing, radius, gradients, fonts } from "../ui/kit";
+import { Screen, TabBar, TextField, Button, Sheet, ResultDialog, Banner, InfoButton, colors, spacing, radius, gradients, fonts } from "../ui/kit";
 import { isLightTheme } from "../theme";
 import { useMarkets } from "../data/useCoinGecko";
 import { useApp, useToast } from "../state/store";
@@ -37,14 +37,23 @@ function makeSwapStyles() {
   });
 }
 
-function KeyValue({ label, value }) {
+function KeyValue({ label, value, info }) {
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 }}>
-      <Text style={{ color: colors.textTertiary, fontSize: 13 }}>{label}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <Text style={{ color: colors.textTertiary, fontSize: 13 }}>{label}</Text>
+        {info && <InfoButton label={label} body={info} />}
+      </View>
       <Text style={{ color: colors.textPrimary, fontSize: 13 }}>{value}</Text>
     </View>
   );
 }
+
+const INFO = {
+  rate: "How much of the destination asset you get for one unit of the asset you're swapping. This updates live with the market — it can move between when you open Swap and when you confirm.",
+  fee: "Paid to the network that processes the transaction, not to Zenbit. It varies with how busy that network is right now.",
+  slippage: "The most the exchange rate is allowed to move against you between confirming and the swap actually executing. If the market moves past this in the wrong direction, the swap is cancelled instead of completing at a worse rate.",
+};
 
 // Deterministic failure ("999") preserved from the web version so the
 // error + recovery path is reachable on demand, not by chance.
@@ -191,9 +200,9 @@ export default function SwapScreen({ navigation }) {
           </View>
 
           <View style={{ padding: 14, borderRadius: radius.md, backgroundColor: colors.surfaceCard, marginBottom: spacing.md }}>
-            <KeyValue label="Rate" value={loading && !markets ? "Finding rate…" : rate ? `1 ${fromSym.toUpperCase()} ≈ ${rate.toFixed(6)} ${toSym.toUpperCase()}` : "Unavailable"} />
-            <KeyValue label="Network fee" value={money(fee)} />
-            <KeyValue label="Slippage tolerance" value="0.5%" />
+            <KeyValue label="Rate" value={loading && !markets ? "Finding rate…" : rate ? `1 ${fromSym.toUpperCase()} ≈ ${rate.toFixed(6)} ${toSym.toUpperCase()}` : "Unavailable"} info={INFO.rate} />
+            <KeyValue label="Network fee" value={money(fee)} info={INFO.fee} />
+            <KeyValue label="Slippage tolerance" value="0.5%" info={INFO.slippage} />
           </View>
 
           {insufficient && <Banner tone="danger">Not enough {fromSym.toUpperCase()}. You have {availableUnits.toLocaleString("en-US", { maximumFractionDigits: 6 })}.</Banner>}
@@ -220,8 +229,8 @@ export default function SwapScreen({ navigation }) {
       <Sheet open={confirming} onClose={() => setConfirming(false)} title="Confirm swap">
         <KeyValue label="You pay" value={`${amount} ${fromSym.toUpperCase()}`} />
         <KeyValue label="You receive" value={`${receiveAmount.toFixed(6)} ${toSym.toUpperCase()}`} />
-        <KeyValue label="Rate" value={`1 ${fromSym.toUpperCase()} ≈ ${rate.toFixed(6)} ${toSym.toUpperCase()}`} />
-        <KeyValue label="Network fee" value={money(fee)} />
+        <KeyValue label="Rate" value={`1 ${fromSym.toUpperCase()} ≈ ${rate.toFixed(6)} ${toSym.toUpperCase()}`} info={INFO.rate} />
+        <KeyValue label="Network fee" value={money(fee)} info={INFO.fee} />
         <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
           <Button onPress={submit}>Confirm</Button>
           <Button variant="secondary" onPress={() => setConfirming(false)}>Cancel</Button>

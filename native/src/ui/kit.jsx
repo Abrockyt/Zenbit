@@ -718,6 +718,25 @@ export function Sheet({ open, onClose, title, children }) {
   );
 }
 
+// Small "i" affordance for a jargon term (Slippage tolerance, Network fee,
+// an indicator's acronym…) — tap opens a real explanation instead of
+// leaving the term to speak for itself. There was no contextual help
+// anywhere in the app before this; "Help centre" was the only entry point,
+// and it was a dead toast (see HelpCentreScreen).
+export function InfoButton({ label, body, size = 15 }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Pressable onPress={() => setOpen(true)} hitSlop={10} style={{ marginLeft: 5 }}>
+        <Feather name="help-circle" size={size} color={colors.textTertiary} />
+      </Pressable>
+      <Sheet open={open} onClose={() => setOpen(false)} title={label}>
+        <Text style={{ color: colors.textSecondary, fontSize: 14.5, lineHeight: 22, paddingBottom: spacing.lg }}>{body}</Text>
+      </Sheet>
+    </>
+  );
+}
+
 function ResultCard({ tone, title, message, primaryLabel, onPrimary, secondaryLabel, onSecondary }) {
   const tint = tone === "success" ? colors.up : colors.down;
   const enter = useEnterAnimation({ fromY: 24 });
