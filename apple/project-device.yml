@@ -1,0 +1,59 @@
+name: ZenbitPayDevice
+options:
+  bundleIdPrefix: com.abrockyt
+  deploymentTarget:
+    iOS: "26.1"
+    watchOS: "26.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: R3PSC7NZT4
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: YES
+
+targets:
+  ZenbitPay:
+    type: application
+    platform: iOS
+    sources:
+      - path: Shared
+      - path: iOS
+      - path: LiveActivity/PaymentAttributes.swift
+    info:
+      path: iOS/Info.plist
+      properties:
+        CFBundleURLTypes:
+          - CFBundleURLName: com.abrockyt.zenbitpay
+            CFBundleURLSchemes: [zenbit, upi]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.abrockyt.zenbitpay
+        PRODUCT_NAME: Zenbit
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        INFOPLIST_KEY_CFBundleDisplayName: Zenbit
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_NSCameraUsageDescription: "Zenbit uses the camera to scan UPI QR codes so you can pay without typing details."
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "Face ID unlocks Zenbit. Payments still need your UPI PIN."
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Pick a saved QR code image to pay from it."
+        INFOPLIST_KEY_NSSupportsLiveActivities: YES
+        INFOPLIST_KEY_UIUserInterfaceStyle: Light
+
+schemes:
+  ZenbitPay:
+    build:
+      targets:
+        ZenbitPay: all
+    run:
+      config: Debug

@@ -1,0 +1,14 @@
+{
+  "Simulator Target Bundle": "com.abrockyt.zenbitpay.watchkitapp",
+  "aps": {
+    "alert": {
+      "title": "Payment received",
+      "body": "Arjun Nair sent you ₹1,200"
+    },
+    "category": "PAYMENT_RECEIVED",
+    "sound": "default"
+  },
+  "amount": "₹1,200",
+  "sender": "Arjun Nair",
+  "note": "Movie tickets 🎬"
+}

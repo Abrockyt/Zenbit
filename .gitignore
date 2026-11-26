@@ -24,3 +24,11 @@ dist-ssr
 *.sw?
 
 .vercel
+apple/build*/
+apple/ZenbitPay.xcodeproj/xcuserdata/
+apple/ZenbitPay.xcodeproj/project.xcworkspace/xcuserdata/
+.shots/
+apple/ZenbitPayDevice.xcodeproj/
+**/xcuserdata/
+*.xcuserstate
+.DS_Store
