@@ -8,6 +8,8 @@ Pay in a few taps, see exactly who is getting your money, and earn rewards witho
 
 Designed and developed over two weeks, up to 26 November 2026.
 
+**[Open the live showcase](https://zenbit-nine.vercel.app)**
+
 <img src="docs/images/hero.jpg" alt="Zenbit home, payment sent, rewards and Zen AI screens" width="100%">
 
 </div>
@@ -250,7 +252,7 @@ Choose the **ZenbitPay** scheme and an iPhone simulator, then press Run. To run 
 | [`apple/`](apple) | SwiftUI app for iPhone and Apple Watch, widgets, Live Activity |
 | [`figma/`](figma) | Design tokens, screen captures and notes |
 | [`recordings/`](recordings) | Framed 60 fps recordings of the main flows |
-| [`docs/images/`](docs/images) | Images used on this page |
+| [`docs/`](docs) | The showcase web page and the images used here |
 
 The earlier web and Expo prototypes were removed from the current files; they remain in the Git history.
 

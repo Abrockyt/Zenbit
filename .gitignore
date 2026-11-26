@@ -28,3 +28,6 @@ apple/ZenbitPayDevice.xcodeproj/
 /temp_log.txt
 /apple/DESIGN.md
 /.shots/
+
+# Local editor settings
+.claude/

@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zenbit: a UPI payments concept for iPhone and Apple Watch</title>
+<meta name="description" content="Zenbit is a UPI payments concept designed and built in SwiftUI. See the screens, the design decisions, how ads work and an illustrative business model.">
+<link rel="icon" type="image/png" href="media/icon.png">
+<style>
+:root{--ink:#0b0d0c;--ink2:#5b605e;--line:#e7e9e8;--soft:#f4f5f8;--bg:#fff;--green:#00c46a;--greenInk:#0a7a47;--mint:#e6f8ee}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{font:16px/1.6 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+img,video{max-width:100%;display:block}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+nav{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.86);backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:22px;height:60px}
+.brand{display:flex;flex-shrink:0;align-items:center;gap:10px;font-weight:700;text-decoration:none}
+.brand img{width:30px;height:30px;flex-shrink:0;border-radius:8px}
+.links{display:flex;min-width:0;gap:20px;margin-left:auto;overflow-x:auto;scrollbar-width:none;white-space:nowrap}
+.links a{font-size:14px;color:var(--ink2);text-decoration:none}
+.links a:hover{color:var(--ink)}
+h1{font-size:clamp(40px,6.4vw,72px);line-height:1.04;letter-spacing:-.035em;font-weight:800}
+h2{font-size:clamp(28px,4vw,44px);line-height:1.1;letter-spacing:-.025em;font-weight:800}
+h3{font-size:19px;letter-spacing:-.01em;margin:44px 0 14px}
+.lead{font-size:clamp(17px,2vw,20px);color:var(--ink2);max-width:640px;margin-top:16px}
+section{padding:88px 0;border-top:1px solid var(--line)}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--greenInk);margin-bottom:12px}
+.hero{padding:64px 0 76px;border:0}
+.hero .wrap{display:grid;grid-template-columns:1.25fr .75fr;gap:48px;align-items:center}
+.btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.btn{display:inline-block;padding:14px 24px;border-radius:999px;font-weight:600;font-size:15px;text-decoration:none;background:var(--ink);color:#fff}
+.btn.alt{background:var(--soft);color:var(--ink)}
+.note{margin-top:26px;font-size:13px;color:var(--ink2);border-left:3px solid var(--green);padding-left:12px;max-width:520px}
+.phone{justify-self:center;width:min(100%,340px);background:#edeef2;border-radius:44px;padding:14px}
+.phone video{width:100%;height:auto;border-radius:32px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
+.stat{background:var(--soft);border-radius:22px;padding:22px}
+.stat b{display:block;font-size:30px;letter-spacing:-.02em}
+.stat span{font-size:13.5px;color:var(--ink2)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:38px}
+.card{background:var(--soft);border-radius:24px;padding:24px}
+.card h4{font-size:17px;line-height:1.35;margin-bottom:8px;letter-spacing:-.01em}
+.card p{font-size:14.5px;color:var(--ink2)}
+.card p+p{margin-top:10px}
+.card .why{color:var(--ink)}
+.board{background:#f4f5f8;border-radius:26px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.board img{width:100%;height:auto}
+.board.widgets{background:#e9eaf0}
+.board.chart{background:#fff;border:1px solid var(--line);padding:8px}
+.cap{font-size:14px;color:var(--ink2);margin-top:12px}
+.flow{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px;counter-reset:s}
+.flow div{flex:1 1 170px;background:var(--soft);border-radius:18px;padding:18px;font-size:14px;color:var(--ink2)}
+.flow div b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+.flow div::before{counter-increment:s;content:counter(s);display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;font-weight:700;margin-bottom:12px}
+.table{overflow-x:auto;margin-top:22px;border:1px solid var(--line);border-radius:20px}
+table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:560px}
+th,td{text-align:left;padding:13px 18px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--soft);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+code{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:2px 6px;border-radius:6px}
+.flag{background:#fff6e0;border:1px solid #f1d58a;border-radius:18px;padding:18px 20px;margin-top:28px;font-size:14.5px}
+.finding{background:var(--ink);color:#fff;border-radius:26px;padding:30px;margin-top:24px}
+.finding b{display:block;font-size:22px;letter-spacing:-.01em;margin-bottom:8px}
+.finding p{color:#c9cecc}
+.two{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:20px}
+footer{border-top:1px solid var(--line);padding:56px 0 70px;font-size:13.5px;color:var(--ink2)}
+footer p{margin-top:10px;max-width:760px}
+@media (max-width:900px){
+  .hero .wrap{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr 1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  /* keep wide screen boards readable: swipe sideways */
+  .board:not(.fit) img{width:820px;max-width:none}
+}
+@media (max-width:600px){
+  section{padding:60px 0}
+  .grid{grid-template-columns:1fr}
+  .links{gap:16px}
+  .brand span{display:none}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a class="brand" href="#top"><img src="media/icon.png" alt="Zenbit icon"><span>Zenbit</span></a>
+  <div class="links">
+    <a href="#why">Why it works</a><a href="#screens">Screens</a><a href="#decisions">UI decisions</a><a href="#ads">Advertising</a><a href="#business">Business</a><a href="#data">Data</a><a href="#revenue">Revenue model</a>
+  </div>
+</div></nav>
+
+<header class="hero" id="top"><div class="wrap">
+  <div>
+    <div class="eyebrow">iPhone + Apple Watch · SwiftUI</div>
+    <h1>Pay people,<br>not just numbers.</h1>
+    <p class="lead">Zenbit is a UPI payments concept that shows who is getting your money and how much, keeps your balance private, and keeps ads out of the payment.</p>
+    <div class="btns">
+      <a class="btn" href="#screens">See the screens</a>
+      <a class="btn alt" href="https://github.com/Abrockyt/Zenbit">View the code on GitHub</a>
+    </div>
+    <p class="note"><b>Concept app.</b> People, balances, payments and offers are sample data. No bank is connected, no money moves and no user data is collected.</p>
+  </div>
+  <div class="phone">
+    <video src="media/payment.mp4" poster="media/payment-poster.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="Screen recording of a simulated Zenbit payment"></video>
+  </div>
+</div></header>
+
+<section id="why"><div class="wrap">
+  <div class="eyebrow">Why it works</div>
+  <h2>Designed around the moment of paying.</h2>
+  <p class="lead">Designed and developed over two weeks, up to 26 November 2026. Written in SwiftUI.</p>
+  <div class="grid">
+    <div class="card"><h4>“Am I paying the right person?”</h4><p>Face, name and UPI ID before paying. Face and amount again while sending.</p><p class="why">A face is quicker to check than a string of characters.</p></div>
+    <div class="card"><h4>“Did it go through?”</h4><p>A large Dynamic Island card goes from a spinner to a green tick, followed by a sound and a receipt.</p><p class="why">One place to look, told through words, colour and sound.</p></div>
+    <div class="card"><h4>“Don’t show my balance to others.”</h4><p>No balance before paying. “Not enough balance” appears only after the PIN.</p><p class="why">The screen stays safe in a shop queue.</p></div>
+    <div class="card"><h4>“Stop me before a mistake.”</h4><p>Warnings for repeated payments and suspicious requests.</p><p class="why">The check happens before money leaves.</p></div>
+    <div class="card"><h4>“Make the usual thing quick.”</h4><p>Suggested amount, Face ID, favourites and widgets.</p><p class="why">Paying someone again takes 3 taps from Home.</p></div>
+    <div class="card"><h4>“Keep ads out of my way.”</h4><p>Ads are labelled and never appear in the pay flow or receipt.</p><p class="why">The business earns without getting between a person and a payment.</p></div>
+  </div>
+</div></section>
+
+<section id="screens"><div class="wrap">
+  <div class="eyebrow">Screens</div>
+  <h2>Every flow, including the awkward ones.</h2>
+  <p class="lead">Captured from the app. On a phone, swipe each row sideways.</p>
+  <h3>Paying</h3><div class="board"><img loading="lazy" src="images/payment.jpg" alt="Choose a person, amount, sending, sent and receipt"></div>
+  <h3>Getting started</h3><div class="board"><img loading="lazy" src="images/onboarding.jpg" alt="Onboarding screens"></div>
+  <h3>Home and activity</h3><div class="board"><img loading="lazy" src="images/home-activity.jpg" alt="Home, balance, get paid and activity"></div>
+  <h3>Rewards</h3><div class="board"><img loading="lazy" src="images/rewards.jpg" alt="Reward wallet, redeem, scratch card and coupons"></div>
+  <h3>Zen AI, profile and Watch pairing</h3><div class="board"><img loading="lazy" src="images/ai-profile.jpg" alt="Zen AI, profile and Apple Watch pairing"></div>
+  <h3>When things go wrong</h3><div class="board"><img loading="lazy" src="images/edge-cases.jpg" alt="Declined after PIN, failed, pending, review and Face ID"></div>
+  <h3>Loading states</h3><div class="board"><img loading="lazy" src="images/loading.jpg" alt="Launch, wireframe, processing and redeem loaders"></div>
+  <h3>Apple Watch</h3><div class="board"><img loading="lazy" src="images/watch.jpg" alt="Apple Watch screens"></div>
+  <h3>Widgets</h3><div class="board widgets"><img loading="lazy" src="images/widgets.jpg" alt="Widgets, including Quick pay on a Clear Home Screen"></div>
+  <p class="cap">Actions come first and no bank balance is shown. On Clear and Tinted Home Screens, widgets switch to high-contrast white and keep faces in colour.</p>
+</div></section>
+
+<section id="decisions"><div class="wrap">
+  <div class="eyebrow">UI decisions I made</div>
+  <h2>The calls that shaped it.</h2>
+  <div class="grid">
+    <div class="card"><h4>My own Z mark, in a glass style</h4><p>Plain white launch with a still black logo.</p><p class="why">Recognisable, and quick to open.</p></div>
+    <div class="card"><h4>Black for actions, green for money</h4><p>Green is kept for money, success, scan and the selected tab.</p><p class="why">When green appears, it means something.</p></div>
+    <div class="card"><h4>A cleaner home header</h4><p>Removed the extra “+₹50” chip.</p><p class="why">Less competes with the main actions.</p></div>
+    <div class="card"><h4>A small see-through Scan button</h4><p>Narrow floating pill with a green icon.</p><p class="why">In reach without hiding content.</p></div>
+    <div class="card"><h4>Simple sign-up</h4><p>No Google sign-in, a labelled step bar and clear OTP and PIN screens.</p><p class="why">People know where they are.</p></div>
+    <div class="card"><h4>A real iOS-style number pad</h4><p>Round keys, letters and even spacing.</p><p class="why">It behaves as iPhone users expect.</p></div>
+    <div class="card"><h4>Real logos, compact “Pay from”</h4><p>Bank and merchant logos with less text.</p><p class="why">The amount stays the focus.</p></div>
+    <div class="card"><h4>Privacy for low balance</h4><p>The message moved to after the PIN.</p><p class="why">Others don’t learn the balance is low before the owner confirms.</p></div>
+    <div class="card"><h4>One circular loader</h4><p>Used for bank and server waits.</p><p class="why">Waiting looks intentional, not frozen.</p></div>
+    <div class="card"><h4>Rewards like a wallet</h4><p>Stacked cards, scratch cards, ticket coupons, a bank picker and sound.</p><p class="why">Easy to scan, and redeeming feels finished.</p></div>
+    <div class="card"><h4>A calm, black-and-white AI</h4><p>Removed the orb and border effects.</p><p class="why">Colour stays meaningful elsewhere.</p></div>
+    <div class="card"><h4>A simple, colourful home scene</h4><p>Flat colours, buildings and people. No sun.</p><p class="why">Warm without distracting.</p></div>
+    <div class="card"><h4>A simpler “All set”</h4><p>One animated tick instead of stacked cards.</p><p class="why">Understood in a second.</p></div>
+    <div class="card"><h4>Ads only in free space</h4><p>A one-line ad appears as the tab bar shrinks, then leaves.</p><p class="why">No content is pushed away for it.</p></div>
+    <div class="card"><h4>Clean charts</h4><p>Fixed overlapping labels.</p><p class="why">Numbers help only if they can be read.</p></div>
+    <div class="card"><h4>Plain Watch and widgets</h4><p>Flat backgrounds and light cards.</p><p class="why">Readable at a glance.</p></div>
+    <div class="card"><h4>A bigger payment island</h4><p>Large photo, name, amount and green tick.</p><p class="why">Who and how much come first.</p></div>
+    <div class="card"><h4>Readable glass widgets</h4><p>Bolder text, soft icon plates and full-colour faces.</p><p class="why">Glass only works if text can be read.</p></div>
+  </div>
+</div></section>
+
+<section id="ads"><div class="wrap">
+  <div class="eyebrow">Advertising</div>
+  <h2>A small record becomes a live creative.</h2>
+  <p class="lead">The app builds each ad itself. No ad network or image generator is connected today.</p>
+  <div class="flow">
+    <div><b>Offer record</b>Brand, headline, colour, code and benefits</div>
+    <div><b>Creative</b>A supplied photo, or a live SwiftUI scene</div>
+    <div><b>Placement</b>Feed card, campaign, tab strip or notification</div>
+    <div><b>Offer page</b>Code, benefits and one clear button</div>
+    <div><b>Tap event</b>The main button logs <code>offer_cta</code> on the device</div>
+  </div>
+  <h3>The creatives</h3><div class="board fit"><img loading="lazy" src="images/ad-creatives.jpg" alt="Five ad creatives for fictional brands: flights, food, earbuds, digital gold and phone protection"></div>
+  <p class="cap">These five brands are fictional. Clouds glide, food steams, the earbud ring turns, coins shimmer and the shield pulses.</p>
+  <h3>Where they appear</h3><div class="board"><img loading="lazy" src="images/ad-placements.jpg" alt="Ad strip, promo cards, offer page and notification ad"></div>
+  <p class="cap">Zomato and other real names appear only to illustrate the concept. There is no partnership.</p>
+  <div class="table"><table>
+    <tr><th>Rule</th><th>For the person</th><th>For the business</th></tr>
+    <tr><td>Every ad says Ad or Sponsored</td><td>Not confused with a real payment</td><td>Protects trust</td></tr>
+    <tr><td>Never in the pay flow or receipt</td><td>Nothing interrupts money moving</td><td>Fewer mistaken taps and complaints</td></tr>
+    <tr><td>Offers connect to paying</td><td>A code or benefit is ready to use</td><td>The offer sits near the moment of spending</td></tr>
+    <tr><td>Ads use their own art and colours</td><td>Easy to tell from app controls</td><td>Creatives still look premium</td></tr>
+    <tr><td>One template, many creatives</td><td>A calm, consistent layout</td><td>A new offer needs a record, not a new screen</td></tr>
+  </table></div>
+</div></section>
+
+<section id="business"><div class="wrap">
+  <div class="eyebrow">How the business works</div>
+  <h2>Free payments build the habit. Services pay for it.</h2>
+  <p class="lead">The model assumes person-to-person UPI payments earn nothing. Revenue would come from useful services around them.</p>
+  <div class="flow">
+    <div><b>Free UPI payments</b>The reason to come back</div>
+    <div><b>Trust</b>Clear, private, predictable</div>
+    <div><b>Services</b>Ads, vouchers, bills, credit, gold and insurance</div>
+    <div><b>Limited rewards</b>Cashback within what the business can afford</div>
+  </div>
+  <div class="table"><table>
+    <tr><th>Planned stream</th><th>Who pays</th><th>Why they would pay</th></tr>
+    <tr><td>Sponsored ads</td><td>Brands</td><td>To reach people who are spending</td></tr>
+    <tr><td>Brand-funded vouchers</td><td>Brands</td><td>To win a new customer</td></tr>
+    <tr><td>Bills and recharges</td><td>Billers and aggregators</td><td>A commission per bill, where offered</td></tr>
+    <tr><td>Credit on UPI</td><td>Lending and card partners</td><td>New borrowers or card users</td></tr>
+    <tr><td>Gold and insurance referrals</td><td>Providers</td><td>A fee for each sale</td></tr>
+  </table></div>
+  <p class="cap">No partner is signed. Each stream would need commercial agreements and regulatory checks.</p>
+</div></section>
+
+<section id="data"><div class="wrap">
+  <div class="eyebrow">Data</div>
+  <h2>What is measured, and what isn’t yet.</h2>
+  <p class="lead">The app has event hooks that write only to the device’s system log. There is no analytics service or server, so there is no user data to report.</p>
+  <div class="table"><table>
+    <tr><th>Area</th><th>Events in the code</th><th>Question it could answer</th></tr>
+    <tr><td>Sign-up</td><td><code>onboarding_step</code> <code>onboarding_complete</code></td><td>Where do people stop?</td></tr>
+    <tr><td>Paying</td><td><code>pay_flow_start</code> <code>amount_confirmed</code> <code>payment_result</code></td><td>How many payments finish?</td></tr>
+    <tr><td>Security</td><td><code>pin_ok</code> <code>pin_wrong</code> <code>faceid</code></td><td>Is approval smooth?</td></tr>
+    <tr><td>Scan</td><td><code>scan_ok</code> <code>scan_invalid</code></td><td>How often does scanning fail?</td></tr>
+    <tr><td>Offers</td><td><code>offer_cta</code> <code>card_apply</code></td><td>Which offers get tapped?</td></tr>
+    <tr><td>Zen AI</td><td><code>ai_prompt</code> <code>ai_suggestion_used</code> <code>ai_feedback</code></td><td>Is the assistant useful?</td></tr>
+    <tr><td>Other</td><td><code>widget_open</code> <code>request_sent</code> <code>copy</code></td><td>Which shortcuts are used?</td></tr>
+  </table></div>
+  <p class="cap">Not measured yet: taps per task, time per step, drop-off rates and ad impressions. A real launch would add these with consent and an off switch, and never record PINs, balances, amounts, UPI IDs or names.</p>
+  <h3>Effort: taps</h3><div class="board chart"><img loading="lazy" src="images/chart-taps.png" alt="Taps per task: 2 to ask Zen AI, 3 to pay again or redeem, 5 to pay a typed amount with Face ID, 9 with a PIN"></div>
+  <p class="cap">Counted from the screens of the build. These are not measurements of real people.</p>
+  <h3>Effort: time</h3><div class="board chart"><img loading="lazy" src="images/chart-timing.png" alt="Designed timing: island at 1.1 seconds, green tick at 3.6 seconds, receipt at 5.8 seconds"></div>
+  <p class="cap">Animation delays in a simulated payment. A real bank could take longer.</p>
+</div></section>
+
+<section id="revenue"><div class="wrap">
+  <div class="eyebrow">Revenue model</div>
+  <h2>An illustration, not results.</h2>
+  <div class="flag"><b>Zenbit has no users or revenue.</b> Everything in this section shows what would happen <i>if</i> these made-up assumptions were true. It is not a forecast.</div>
+  <div class="table"><table>
+    <tr><th>Per monthly active user</th><th>Assumption</th><th>₹ per month</th></tr>
+    <tr><td>Sponsored ads</td><td>90 impressions × ₹60 per 1,000</td><td class="num">5.40</td></tr>
+    <tr><td>Credit on UPI</td><td>4% of users spend ₹10,000; 1% share</td><td class="num">4.00</td></tr>
+    <tr><td>Brand-funded vouchers</td><td>0.3 redemptions × ₹10</td><td class="num">3.00</td></tr>
+    <tr><td>Bills and recharges</td><td>1.5 bills × ₹2</td><td class="num">3.00</td></tr>
+    <tr><td>Gold and insurance referrals</td><td>1% of users × ₹150</td><td class="num">1.50</td></tr>
+    <tr><td><b>Total</b></td><td></td><td class="num">16.90</td></tr>
+  </table></div>
+  <div class="two">
+    <div class="board chart"><img loading="lazy" src="images/chart-revenue.png" alt="Illustrative revenue per user by stream, total 16.90 rupees"></div>
+    <div class="board chart"><img loading="lazy" src="images/chart-cashback.png" alt="Illustrative cashback cost per user: 40 rupees at 0.5 percent, 16 at 0.2 percent, 12 when capped, against 16.90 revenue"></div>
+  </div>
+  <div class="finding"><b>Cashback decides whether it works.</b><p>The app shows 0.5% back on every payment. On ₹8,000 of eligible spend that costs ₹40 a user, against ₹16.90 earned. Under these assumptions, a launch should cap cashback, let brands fund bigger rewards, or stay below about 0.21%.</p></div>
+  <h3>At three user counts</h3><div class="board chart"><img loading="lazy" src="images/chart-scale.png" alt="Illustrative monthly revenue against capped cashback at 10 thousand, 100 thousand and 1 million users"></div>
+  <p class="cap">What is left still has to cover servers, banking partners, support, fraud, compliance, marketing and the team.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="btns" style="margin:0 0 18px"><a class="btn" href="https://github.com/Abrockyt/Zenbit">GitHub</a><a class="btn alt" href="https://www.figma.com/design/krbWrsbpPXzNV9TtVSxwva/Zenbit-new">Figma file</a></div>
+  <p>Zenbit is a concept and is not affiliated with NPCI, UPI, Apple, any bank or any merchant. Bank and merchant logos are trademarks of their owners.</p>
+  <p>Most contact portraits are demo placeholders from randomuser.me. Some images were captured before the latest visual tweaks, and the recording has no sound.</p>
+</div></footer>
+
+<script>
+// Respect reduced motion: don't autoplay the recording.
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) { const v = document.querySelector('video'); v.removeAttribute('autoplay'); v.pause(); }
+</script>
+</body>
+</html>
