@@ -8,9 +8,10 @@ import UIKit
 /// 2. **Dissolve** – on success the card breaks into iridescent pixels (left → right) that stream along an S-curve into the island – the coupon-dissolve reference. (Old: a rocket with an exhaust glow and a
 ///    coin trail, shrinking and darkening until it *becomes* the Dynamic Island
 ///    (the Apple Music minimise motion).
-/// 3. **Island** – it springs open to a pill showing only the amount and a tick that draws itself, holds, then
-///    shrinks back into the hardware island with iOS-style physics.
-/// 4. **Compact** – it settles into a compact pill (like music playing) while the receipt focuses in.
+/// 3. **Island** – as the card leaves, the island opens into a large card: the person's face, who it is
+///    going to and how much, with a spinner. When the money lands the spinner becomes a green tick.
+///    It holds, then shrinks back into the hardware island with iOS-style physics.
+/// 4. The receipt focuses in.
 /// Failure: the card lifts, loses thrust and drops back red. Pending: the card holds, amber.
 /// Reduce Motion: no launch – cross-fades only.
 struct PaymentJourneyView: View {
@@ -31,6 +32,8 @@ struct PaymentJourneyView: View {
     @State private var closing = false
     @State private var cardVisible = true
     @State private var island: IslandMode = .hidden
+    /// False while the money is still travelling into the island; true once it has landed.
+    @State private var arrived = false
     @State private var showReceipt = false
     @State private var checkTrim: CGFloat = 0
     @State private var startedAt = Date()
@@ -46,7 +49,8 @@ struct PaymentJourneyView: View {
             let geom = IslandGeometry(size: size, mode: island)
             let cardW = min(size.width - 72, 310)
             let from = CGRect(x: (size.width - cardW) / 2, y: size.height * 0.4 - 95, width: cardW, height: 190)
-            let to = CGRect(x: size.width / 2 - 62.5, y: geom.topY, width: 125, height: 37)
+            // Pixels fly to the middle of the open island card.
+            let to = CGRect(x: size.width / 2 - 62.5, y: geom.topY + geom.expandedSize.height / 2 - 18, width: 125, height: 37)
 
             ZStack {
                 ZB.Palette.canvas
@@ -80,7 +84,7 @@ struct PaymentJourneyView: View {
                     .transition(.opacity)
                 }
 
-                IslandView(payee: payee, amount: amount, mode: island, status: status, geom: geom, showsWhenIdle: !closing)
+                IslandView(payee: payee, amount: amount, mode: island, status: arrived ? status : nil, geom: geom, showsWhenIdle: !closing)
 
                 if showReceipt {
                     ReceiptView(payee: payee, amount: amount, outcome: outcome, checkTrim: checkTrim,
@@ -165,31 +169,33 @@ struct PaymentJourneyView: View {
 
     private func launchSuccess() async {
         if reduceMotion {
-            withAnimation(.easeInOut(duration: 0.3)) { cardVisible = false; island = .expanded }
+            withAnimation(.easeInOut(duration: 0.3)) { cardVisible = false; island = .expanded; arrived = true }
             hapticTick += 1
             Sounds.play(.success)
-            try? await Task.sleep(for: .seconds(1.4))
+            try? await Task.sleep(for: .seconds(2.2))
             withAnimation(.easeInOut(duration: 0.3)) { island = .hidden }
             withAnimation(.easeInOut(duration: 0.35)) { showReceipt = true; checkTrim = 1 }
             return
         }
-        // 1) The card dissolves into pixels that stream up into the island.
+        // 1) The island opens first: who is receiving and how much, with a spinner.
         Haptics.soft()
+        withAnimation(openSpring) { island = .expanded }
+        try? await Task.sleep(for: .milliseconds(900))
+        // 2) The card dissolves into pixels that stream up into the open island.
         Sounds.play(.whoosh)
         dissolveStart = Date()
-        try? await Task.sleep(for: .milliseconds(1_000))
-        // 2) The island springs open to receive them – amount + a tick that draws itself.
-        withAnimation(openSpring) { island = .expanded }
-        try? await Task.sleep(for: .milliseconds(380))
+        try? await Task.sleep(for: .milliseconds(1_400))
         cardVisible = false
-        // The circle draws, then the tick – the chime lands exactly as the tick completes.
-        try? await Task.sleep(for: .milliseconds(520))
-        Sounds.play(.success)
+        // 3) The money lands: the spinner becomes a green tick and the payment sound plays.
+        try? await Task.sleep(for: .milliseconds(250))
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.7)) { arrived = true }
         hapticTick += 1
-        // 3) Hold, then shrink back into the hardware island.
-        try? await Task.sleep(for: .milliseconds(900))
+        try? await Task.sleep(for: .milliseconds(180))
+        Sounds.play(.success)
+        // 4) Hold long enough to read it, then shrink back into the hardware island.
+        try? await Task.sleep(for: .milliseconds(1_700))
         withAnimation(closeSpring) { island = .hidden }
-        // 4) The receipt comes into focus as the island settles.
+        // 5) The receipt comes into focus as the island settles.
         try? await Task.sleep(for: .milliseconds(260))
         withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) { showReceipt = true }
         withAnimation(.easeOut(duration: 0.5).delay(0.35)) { checkTrim = 1 }
@@ -206,6 +212,7 @@ struct PaymentJourneyView: View {
     }
 
     private func holdPending() async {
+        arrived = true
         withAnimation(openSpring) { island = .expanded }
         hapticTick += 1
         Sounds.play(.pending)
@@ -218,7 +225,8 @@ struct PaymentJourneyView: View {
     // MARK: Styling helpers
 
     private var statusText: String {
-        switch status {
+        // Don't say "sent" until the money has visibly landed.
+        switch status == .success && !arrived ? nil : status {
         case .success: "PAYMENT SENT"
         case .failed: "PAYMENT FAILED"
         case .pending, .refunded: "WAITING FOR BANK"
@@ -226,7 +234,7 @@ struct PaymentJourneyView: View {
         }
     }
     private var statusTint: Color {
-        switch status {
+        switch status == .success && !arrived ? nil : status {
         case .success: ZB.Palette.greenInk
         case .failed: ZB.Palette.danger
         case .pending, .refunded: ZB.Palette.warning
@@ -282,93 +290,135 @@ struct IslandGeometry {
         default: return 14      // 402, 440 and future sizes
         }
     }
-    /// Open. With a physical island the pill widens to either side of the sensor cutout (content can't sit
-    /// behind the cutout – iOS puts it leading/trailing); on other phones it's a centred medium pill.
+    /// Open: a large card that grows out of the island, like an expanded Live Activity.
+    /// On phones with a Dynamic Island the top band is left clear for the sensor cutout.
     var expandedSize: CGSize {
-        Self.hasDynamicIsland ? CGSize(width: min(size.width - 70, 300), height: 36.67)
-                              : CGSize(width: min(size.width - 120, 252), height: 64)
+        CGSize(width: min(size.width - 22, 380), height: Self.hasDynamicIsland ? 134 : 104)
     }
+    var expandedRadius: CGFloat { Self.hasDynamicIsland ? 44 : 34 }
     var current: CGSize { mode == .expanded ? expandedSize : collapsed }
     var restingBottom: CGFloat { topY + collapsed.height + 30 }
 }
 
-// MARK: - Island (amount + a tick that draws itself)
+// MARK: - Island (who, how much, and a green tick when it lands)
 
 private struct IslandView: View {
     let payee: Contact
     let amount: Decimal
     let mode: PaymentJourneyView.IslandMode
+    /// nil while the money is travelling.
     let status: TxStatus?
     let geom: IslandGeometry
     /// The idle capsule blends with the hardware island; hide it once the screen starts leaving.
     var showsWhenIdle = true
-    @State private var drawn = false
+
+    private var open: Bool { mode == .expanded }
 
     var body: some View {
         let s = geom.current
         let full = geom.expandedSize
+        let shape = RoundedRectangle(cornerRadius: open ? geom.expandedRadius : geom.collapsed.height / 2, style: .continuous)
         ZStack(alignment: .top) {
-            Capsule(style: .continuous).fill(.black)
+            shape.fill(.black)
                 .frame(width: s.width, height: s.height)
 
-            let onIsland = IslandGeometry.hasDynamicIsland
-            HStack(spacing: 0) {
-                Text(Money.format(amount))
-                    .font(.system(size: onIsland ? 17 : 26, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(.white)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                    .frame(maxWidth: onIsland ? (full.width - geom.collapsed.width) / 2 - 18 : nil, alignment: .leading)
-                if onIsland {
-                    Spacer(minLength: geom.collapsed.width + 4)   // the sensor cutout lives here
-                } else {
-                    Spacer().frame(width: 12)
+            // Priority, left to right: the face, then who + how much, then the result.
+            HStack(spacing: 14) {
+                AvatarView(contact: payee, size: 64)
+                    .overlay(Circle().strokeBorder(.white.opacity(0.16), lineWidth: 1))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(caption)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.68))
+                        .lineLimit(1)
+                        .contentTransition(.opacity)
+                    Text(Money.format(amount))
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                        .lineLimit(1).minimumScaleFactor(0.6)
                 }
-                StatusMark(status: status, drawn: drawn)
-                    .frame(width: onIsland ? 22 : 28, height: onIsland ? 22 : 28)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                StatusMark(status: status)
+                    .frame(width: 46, height: 46)
             }
-            .padding(.horizontal, onIsland ? 16 : 0)
-            .frame(width: full.width, height: full.height)
-            .opacity(mode == .expanded ? 1 : 0)
-            .animation(.easeOut(duration: 0.18), value: mode)
+            .padding(.horizontal, 20)
+            .frame(width: full.width, height: 64)
+            .padding(.top, IslandGeometry.hasDynamicIsland ? 48 : 20)
+            .scaleEffect(open ? 1 : 0.6, anchor: .top)
+            .blur(radius: open ? 0 : 8)
+            .opacity(open ? 1 : 0)
+            .animation(.spring(response: 0.4, dampingFraction: 0.82).delay(open ? 0.06 : 0), value: mode)
         }
         .frame(width: full.width, height: full.height, alignment: .top)
-        .mask(alignment: .top) { Capsule(style: .continuous).frame(width: s.width, height: s.height) }
-        .opacity((IslandGeometry.hasDynamicIsland && showsWhenIdle) || mode != .hidden ? 1 : 0)
+        .mask(alignment: .top) { shape.frame(width: s.width, height: s.height) }
+        .shadow(color: .black.opacity(open ? 0.28 : 0), radius: 22, y: 12)
+        .opacity((IslandGeometry.hasDynamicIsland && showsWhenIdle) || open ? 1 : 0)
         .position(x: geom.size.width / 2, y: geom.topY + full.height / 2)
-        .onChange(of: mode) { _, m in
-            if m == .expanded {
-                drawn = false
-                withAnimation(.easeOut(duration: 0.55).delay(0.28)) { drawn = true }
-            }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(caption), \(Money.format(amount))")
+    }
+
+    private var caption: String {
+        switch status {
+        case .success: "Sent to \(payee.name)"
+        case .failed: "Couldn't pay \(payee.firstName)"
+        case .pending, .refunded: "Waiting for bank"
+        case nil: "Sending to \(payee.name)"
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(Money.format(amount)) \(status == .failed ? "failed" : "paid")")
     }
 }
 
-/// A circle that draws itself, then a tick (or ✕ / clock) inside it.
+/// A spinner while sending, then a solid disc with a tick that draws itself (green), ✕ (red) or clock (amber).
 private struct StatusMark: View {
     let status: TxStatus?
-    let drawn: Bool
+    @State private var drawn = false
+    @State private var spin = false
 
     var body: some View {
         ZStack {
-            switch status {
-            case .failed:
-                Circle().trim(from: 0, to: drawn ? 1 : 0).stroke(Color(hex: 0xFF5147), style: .init(lineWidth: 2.5, lineCap: .round)).rotationEffect(.degrees(-90))
-                CrossShape().trim(from: 0, to: drawn ? 1 : 0).stroke(Color(hex: 0xFF5147), style: .init(lineWidth: 2.5, lineCap: .round)).padding(8)
-            case .pending:
-                Circle().trim(from: 0, to: drawn ? 1 : 0).stroke(Color(hex: 0xFFB340), style: .init(lineWidth: 2.5, lineCap: .round)).rotationEffect(.degrees(-90))
-                Image(systemName: "clock").font(.system(size: 13, weight: .semibold)).foregroundStyle(Color(hex: 0xFFB340)).opacity(drawn ? 1 : 0)
-            default:
-                Circle().trim(from: 0, to: drawn ? 1 : 0).stroke(.white, style: .init(lineWidth: 2.5, lineCap: .round)).rotationEffect(.degrees(-90))
-                Circle().fill(.white).scaleEffect(drawn ? 1 : 0.2).opacity(drawn ? 1 : 0)
-                    .animation(.spring(response: 0.4, dampingFraction: 0.7).delay(0.55), value: drawn)
-                CheckShape().trim(from: 0, to: drawn ? 1 : 0)
-                    .stroke(.black, style: .init(lineWidth: 2.8, lineCap: .round, lineJoin: .round)).padding(8)
-                    .animation(.easeOut(duration: 0.3).delay(0.62), value: drawn)
+            if let status {
+                Circle().fill(fill(status))
+                    .scaleEffect(drawn ? 1 : 0.3)
+                    .opacity(drawn ? 1 : 0)
+                    .animation(.spring(response: 0.38, dampingFraction: 0.62), value: drawn)
+                switch status {
+                case .success:
+                    CheckShape().trim(from: 0, to: drawn ? 1 : 0)
+                        .stroke(.white, style: .init(lineWidth: 4.5, lineCap: .round, lineJoin: .round))
+                        .frame(width: 21, height: 16)
+                        .animation(.easeOut(duration: 0.32).delay(0.18), value: drawn)
+                case .failed:
+                    CrossShape().trim(from: 0, to: drawn ? 1 : 0)
+                        .stroke(.white, style: .init(lineWidth: 4, lineCap: .round))
+                        .frame(width: 16, height: 16)
+                        .animation(.easeOut(duration: 0.3).delay(0.18), value: drawn)
+                default:
+                    Image(systemName: "clock.fill").font(.system(size: 22, weight: .semibold)).foregroundStyle(.black)
+                        .opacity(drawn ? 1 : 0)
+                }
+            } else {
+                Circle().stroke(.white.opacity(0.18), lineWidth: 3.5).padding(5)
+                Circle().trim(from: 0, to: 0.28)
+                    .stroke(.white, style: .init(lineWidth: 3.5, lineCap: .round))
+                    .padding(5)
+                    .rotationEffect(.degrees(spin ? 360 : 0))
+                    .onAppear { withAnimation(.linear(duration: 0.8).repeatForever(autoreverses: false)) { spin = true } }
+                    .onDisappear { spin = false }
             }
+        }
+        .onChange(of: status, initial: true) { _, new in
+            drawn = false
+            guard new != nil else { return }
+            Task { @MainActor in drawn = true }
+        }
+    }
+
+    private func fill(_ s: TxStatus) -> Color {
+        switch s {
+        case .success: ZB.Palette.green
+        case .failed: Color(hex: 0xFF5147)
+        default: Color(hex: 0xFFB340)
         }
     }
 }

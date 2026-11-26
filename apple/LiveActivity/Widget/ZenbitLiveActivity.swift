@@ -11,33 +11,14 @@ struct PaymentLiveActivity: Widget {
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { ctx in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    Initials(text: ctx.attributes.payeeInitials, size: 44)
-                        .padding(.leading, 4)
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(ctx.state.amountText).font(.title3.weight(.semibold)).monospacedDigit()
-                        StatusGlyph(status: ctx.state.status)
-                    }
-                    .padding(.trailing, 4)
-                }
-                DynamicIslandExpandedRegion(.center) {
-                    VStack(spacing: 1) {
-                        Text(title(ctx.state.status)).font(.caption).foregroundStyle(.secondary)
-                        Text(ctx.attributes.payeeName).font(.headline).lineLimit(1)
-                    }
-                }
+                // One row under the sensor: face, then who + how much, then the result.
                 DynamicIslandExpandedRegion(.bottom) {
-                    if ctx.state.status == "sending" {
-                        ProgressView(timerInterval: Date()...Date().addingTimeInterval(3), countsDown: false)
-                            .progressViewStyle(.linear).tint(.white).labelsHidden()
-                    } else if !ctx.state.ref.isEmpty {
-                        Text("UPI Ref \(ctx.state.ref)").font(.caption2.monospaced()).foregroundStyle(.secondary)
-                    }
+                    PaymentRow(ctx: ctx, caption: caption(ctx))
+                        .padding(.horizontal, 6)
+                        .padding(.bottom, 6)
                 }
             } compactLeading: {
-                Initials(text: ctx.attributes.payeeInitials, size: 24)
+                Portrait(attributes: ctx.attributes, size: 24)
             } compactTrailing: {
                 HStack(spacing: 4) {
                     Text(ctx.state.amountText).font(.caption.weight(.semibold)).monospacedDigit()
@@ -50,12 +31,34 @@ struct PaymentLiveActivity: Widget {
         }
     }
 
-    private func title(_ s: String) -> String {
-        switch s {
-        case "paid": "Paid"
-        case "failed": "Payment failed"
-        case "processing": "Waiting for bank"
-        default: "Paying"
+    private func caption(_ ctx: ActivityViewContext<PaymentAttributes>) -> String {
+        paymentCaption(ctx)
+    }
+}
+
+private func paymentCaption(_ ctx: ActivityViewContext<PaymentAttributes>) -> String {
+    switch ctx.state.status {
+    case "paid": "Sent to \(ctx.attributes.payeeName)"
+    case "failed": "Payment failed"
+    case "processing": "Waiting for bank"
+    default: "Sending to \(ctx.attributes.payeeName)"
+    }
+}
+
+private struct PaymentRow: View {
+    let ctx: ActivityViewContext<PaymentAttributes>
+    let caption: String
+    var body: some View {
+        HStack(spacing: 14) {
+            Portrait(attributes: ctx.attributes, size: 58)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(caption).font(.subheadline.weight(.medium)).foregroundStyle(.white.opacity(0.7)).lineLimit(1)
+                Text(ctx.state.amountText)
+                    .font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit()
+                    .foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.6)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            StatusGlyph(status: ctx.state.status, size: 40)
         }
     }
 }
@@ -63,21 +66,21 @@ struct PaymentLiveActivity: Widget {
 private struct LockScreenView: View {
     let ctx: ActivityViewContext<PaymentAttributes>
     var body: some View {
-        HStack(spacing: 12) {
-            Initials(text: ctx.attributes.payeeInitials, size: 44)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(ctx.state.status == "paid" ? "Paid \(ctx.attributes.payeeName)" : "Paying \(ctx.attributes.payeeName)")
-                    .font(.headline)
-                Text(ctx.attributes.payeeUPI).font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(ctx.state.amountText).font(.title3.weight(.semibold)).monospacedDigit()
-                StatusGlyph(status: ctx.state.status)
-            }
+        PaymentRow(ctx: ctx, caption: paymentCaption(ctx))
+            .padding(16)
+    }
+}
+
+private struct Portrait: View {
+    let attributes: PaymentAttributes
+    let size: CGFloat
+    var body: some View {
+        if let photo = attributes.payeePhoto {
+            Image(photo).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill()
+                .frame(width: size, height: size).clipShape(.circle)
+        } else {
+            Initials(text: attributes.payeeInitials, size: size)
         }
-        .foregroundStyle(.white)
-        .padding(16)
     }
 }
 
@@ -97,15 +100,24 @@ private struct Initials: View {
 private struct StatusGlyph: View {
     let status: String
     var small = false
+    var size: CGFloat?
+    private var side: CGFloat { size ?? (small ? 15 : 20) }
     var body: some View {
         Group {
             switch status {
-            case "paid": Image(systemName: "checkmark.circle.fill").foregroundStyle(.white)
-            case "failed": Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
-            case "processing": Image(systemName: "clock.fill").foregroundStyle(.orange)
-            default: ProgressView().tint(.white).scaleEffect(small ? 0.6 : 0.8)
+            case "paid": disc("checkmark.circle.fill", .white, Color(red: 0, green: 0.77, blue: 0.42))
+            case "failed": disc("xmark.circle.fill", .white, .red)
+            case "processing": disc("clock.fill", .orange, .orange)
+            default: ProgressView().tint(.white).scaleEffect(small ? 0.6 : 1)
             }
         }
-        .font(small ? .caption : .body)
+        .frame(width: side, height: side)
+    }
+
+    private func disc(_ symbol: String, _ mark: Color, _ fill: Color) -> some View {
+        Image(systemName: symbol)
+            .resizable().scaledToFit()
+            .symbolRenderingMode(symbol == "clock.fill" ? .monochrome : .palette)
+            .foregroundStyle(mark, fill)
     }
 }

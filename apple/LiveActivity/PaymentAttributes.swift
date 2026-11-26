@@ -12,4 +12,6 @@ struct PaymentAttributes: ActivityAttributes {
     var payeeName: String
     var payeeInitials: String
     var payeeUPI: String
+    /// Portrait in the shared asset catalog; nil falls back to initials.
+    var payeePhoto: String?
 }

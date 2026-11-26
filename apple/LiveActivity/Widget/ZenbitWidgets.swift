@@ -74,17 +74,36 @@ private enum WZ {
     static let black = Color(hex: 0x0B0C10)
 }
 
+/// Clear and Tinted Home Screens (and the Lock Screen) throw away every colour and keep only opacity,
+/// then remove the widget background. A dark disc with a white glyph would turn into a solid white blob,
+/// and grey text would look the same as black. So in those modes we draw with white at set opacities:
+/// full white for what you read, soft white for plates behind it.
+private struct WTone {
+    let flat: Bool
+    init(_ mode: WidgetRenderingMode) { flat = mode != .fullColor }
+    var ink: Color { flat ? .white : WZ.ink }
+    var ink2: Color { flat ? .white.opacity(0.85) : WZ.ink2 }
+    /// Disc behind a white glyph.
+    var disc: Color { flat ? .white.opacity(0.22) : WZ.ink }
+    /// Soft tile behind dark (or, when flat, white) content.
+    var tile: Color { flat ? .white.opacity(0.14) : WZ.surface }
+    var plate: Color { flat ? .white.opacity(0.20) : .white }
+}
+
 private struct Face: View {
     let contact: Contact
     var size: CGFloat
+    @Environment(\.widgetRenderingMode) private var rendering
     var body: some View {
         Group {
-            if let p = contact.photoAsset { Image(p).resizable().scaledToFill() }
-            else {
+            if let p = contact.photoAsset {
+                // Keep real faces in Clear / Tinted modes instead of a flat white silhouette.
+                Image(p).resizable().widgetAccentedRenderingMode(.fullColor).scaledToFill()
+            } else {
                 Text(String(contact.firstName.prefix(1)))
-                    .font(.system(size: size * 0.42, weight: .semibold, design: .rounded)).foregroundStyle(.white)
+                    .font(.system(size: size * 0.46, weight: .bold, design: .rounded)).foregroundStyle(.white)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(hue: contact.hue, saturation: 0.45, brightness: 0.62))
+                    .background(rendering == .fullColor ? Color(hue: contact.hue, saturation: 0.45, brightness: 0.62) : Color.white.opacity(0.22))
             }
         }
         .frame(width: size, height: size)
@@ -119,15 +138,15 @@ private struct ScanPayView: View {
                 HStack {
                     Image(systemName: "indianrupeesign.circle.fill").font(.title3).foregroundStyle(.white)
                     Spacer()
-                    Text("UPI").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.55))
+                    Text("UPI").font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(.white.opacity(0.85))
                 }
                 Spacer()
                 Image(systemName: "qrcode.viewfinder")
                     .font(.system(size: 40, weight: .medium))
                     .foregroundStyle(.white)
                 Spacer()
-                Text("Scan & pay").font(.system(.headline, design: .rounded)).foregroundStyle(.white)
-                Text("Any UPI QR").font(.caption2).foregroundStyle(.white.opacity(0.6))
+                Text("Scan & pay").font(.system(.headline, design: .rounded).weight(.bold)).foregroundStyle(.white).widgetAccentable()
+                Text("Any UPI QR").font(.caption.weight(.medium)).foregroundStyle(.white.opacity(0.85))
             }
             .widgetURL(ZenLink.scan)
             .containerBackground(for: .widget) { WZ.black }
@@ -148,30 +167,32 @@ struct QuickPayWidget: Widget {
 
 private struct QuickPayView: View {
     let entry: ZenEntry
+    @Environment(\.widgetRenderingMode) private var rendering
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let tone = WTone(rendering)
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Quick pay").font(.system(.subheadline, design: .rounded).weight(.semibold)).foregroundStyle(WZ.ink)
+                Text("Quick pay").font(.system(.headline, design: .rounded).weight(.bold)).foregroundStyle(tone.ink)
                 Spacer()
                 Link(destination: ZenLink.receive) {
-                    Label("My QR", systemImage: "qrcode").font(.caption.weight(.semibold)).foregroundStyle(WZ.ink2)
+                    Label("My QR", systemImage: "qrcode").font(.footnote.weight(.semibold)).foregroundStyle(tone.ink2)
                 }
             }
             HStack(spacing: 0) {
                 ForEach(entry.favourites) { c in
                     Link(destination: ZenLink.pay(c)) {
-                        VStack(spacing: 5) {
-                            Face(contact: c, size: 44)
-                            Text(c.firstName).font(.caption2.weight(.medium)).foregroundStyle(WZ.ink).lineLimit(1)
+                        VStack(spacing: 6) {
+                            Face(contact: c, size: 48)
+                            Text(c.firstName).font(.caption.weight(.semibold)).foregroundStyle(tone.ink).lineLimit(1).minimumScaleFactor(0.8)
                         }
                         .frame(maxWidth: .infinity)
                     }
                 }
                 Link(destination: ZenLink.scan) {
-                    VStack(spacing: 5) {
-                        Image(systemName: "qrcode.viewfinder").font(.system(size: 19, weight: .semibold)).foregroundStyle(.white)
-                            .frame(width: 44, height: 44).background(WZ.ink, in: .circle)
-                        Text("Scan").font(.caption2.weight(.medium)).foregroundStyle(WZ.ink)
+                    VStack(spacing: 6) {
+                        Image(systemName: "qrcode.viewfinder").font(.system(size: 23, weight: .semibold)).foregroundStyle(.white)
+                            .frame(width: 48, height: 48).background(tone.disc, in: .circle)
+                        Text("Scan").font(.caption.weight(.semibold)).foregroundStyle(tone.ink)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -195,24 +216,27 @@ struct RewardsWidget: Widget {
 private struct RewardsView: View {
     let entry: ZenEntry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var rendering
     var body: some View {
+        let tone = WTone(rendering)
         if family == .accessoryInline {
             Label("\(Money.format(entry.cashback)) cashback earned", systemImage: "gift")
                 .widgetURL(ZenLink.rewards)
                 .containerBackground(for: .widget) { Color.clear }
         } else {
             VStack(alignment: .leading, spacing: 4) {
-                Image(systemName: "gift.fill").font(.title3).foregroundStyle(WZ.ink)
+                Image(systemName: "gift.fill").font(.title2).foregroundStyle(tone.ink)
                 Spacer()
-                Text("Cashback earned").font(.caption).foregroundStyle(WZ.ink2)
+                Text("Cashback earned").font(.footnote.weight(.semibold)).foregroundStyle(tone.ink2)
                 Text(Money.format(entry.cashback, decimals: true))
-                    .font(.system(size: 26, weight: .bold, design: .rounded)).monospacedDigit()
-                    .foregroundStyle(WZ.ink).minimumScaleFactor(0.6).lineLimit(1)
+                    .font(.system(size: 28, weight: .bold, design: .rounded)).monospacedDigit()
+                    .foregroundStyle(tone.ink).minimumScaleFactor(0.6).lineLimit(1)
+                    .widgetAccentable()
                 Text("0.5% back")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color(hex: 0x2E7D4F))
-                    .padding(.horizontal, 7).padding(.vertical, 3)
-                    .background(Color(hex: 0xD3EDDC), in: .capsule)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(tone.flat ? .white : Color(hex: 0x1F6B3F))
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(tone.flat ? Color.white.opacity(0.2) : Color(hex: 0xD3EDDC), in: .capsule)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .widgetURL(ZenLink.rewards)
@@ -235,7 +259,9 @@ struct SpendWidget: Widget {
 private struct SpendView: View {
     let entry: ZenEntry
     @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var rendering
     var body: some View {
+        let tone = WTone(rendering)
         if family == .accessoryRectangular {
             VStack(alignment: .leading, spacing: 1) {
                 Label("Zenbit", systemImage: "indianrupeesign.circle").font(.caption2.weight(.semibold))
@@ -247,22 +273,26 @@ private struct SpendView: View {
         } else {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("This month").font(.caption).foregroundStyle(WZ.ink2)
+                    Text("This month").font(.footnote.weight(.semibold)).foregroundStyle(tone.ink2)
                     Text(Money.format(entry.monthSpent))
                         .font(.system(size: 28, weight: .bold, design: .rounded)).monospacedDigit()
-                        .foregroundStyle(WZ.ink).minimumScaleFactor(0.6).lineLimit(1)
+                        .foregroundStyle(tone.ink).minimumScaleFactor(0.6).lineLimit(1)
+                        .widgetAccentable()
                     Spacer()
-                    Label("History", systemImage: "list.bullet.rectangle").font(.caption.weight(.semibold)).foregroundStyle(WZ.ink2)
+                    Label("History", systemImage: "list.bullet.rectangle").font(.footnote.weight(.semibold)).foregroundStyle(tone.ink2)
                 }
                 Chart(entry.weekByDay, id: \.0) { d in
                     BarMark(x: .value("Day", d.0, unit: .day), y: .value("₹", d.1))
-                        .foregroundStyle(Calendar.current.isDateInToday(d.0) ? WZ.green : Color(hex: 0xC5CADF))
+                        .foregroundStyle(Calendar.current.isDateInToday(d.0)
+                                         ? (tone.flat ? Color.white : WZ.green)
+                                         : (tone.flat ? Color.white.opacity(0.38) : Color(hex: 0xC5CADF)))
                         .clipShape(.rect(cornerRadius: 3))
                 }
                 .chartYAxis(.hidden)
                 .chartXAxis {
                     AxisMarks(values: .stride(by: .day)) { _ in
-                        AxisValueLabel(format: .dateTime.weekday(.narrow)).foregroundStyle(WZ.ink2)
+                        AxisValueLabel(format: .dateTime.weekday(.narrow))
+                            .font(.caption2.weight(.semibold)).foregroundStyle(tone.ink2)
                     }
                 }
             }
@@ -285,6 +315,8 @@ struct ActivityWidget: Widget {
 
 private struct ActivityView: View {
     let entry: ZenEntry
+    @Environment(\.widgetRenderingMode) private var rendering
+    private var tone: WTone { WTone(rendering) }
     var body: some View {
         VStack(spacing: 14) {
             HStack(spacing: 8) {
@@ -298,13 +330,13 @@ private struct ActivityView: View {
                         HStack(spacing: 10) {
                             Face(contact: tx.counterparty, size: 34)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(tx.counterparty.name).font(.subheadline.weight(.semibold)).foregroundStyle(WZ.ink).lineLimit(1)
-                                Text(tx.date.formatted(.relative(presentation: .named))).font(.caption2).foregroundStyle(WZ.ink2)
+                                Text(tx.counterparty.name).font(.subheadline.weight(.semibold)).foregroundStyle(tone.ink).lineLimit(1)
+                                Text(tx.date.formatted(.relative(presentation: .named))).font(.caption.weight(.medium)).foregroundStyle(tone.ink2)
                             }
                             Spacer()
                             Text((tx.direction == .received ? "+" : "") + Money.format(tx.amount))
-                                .font(.system(.subheadline, design: .rounded).weight(.semibold)).monospacedDigit()
-                                .foregroundStyle(tx.direction == .received ? Color(hex: 0x2E7D4F) : WZ.ink)
+                                .font(.system(.subheadline, design: .rounded).weight(.bold)).monospacedDigit()
+                                .foregroundStyle(tone.flat ? .white : (tx.direction == .received ? Color(hex: 0x1F6B3F) : WZ.ink))
                         }
                         .padding(.vertical, 7)
                     }
@@ -320,14 +352,14 @@ private struct ActivityView: View {
         Link(destination: url) {
             VStack(spacing: 6) {
                 Image(systemName: s).font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(filled ? .white : WZ.ink)
+                    .foregroundStyle(filled ? .white : tone.ink)
                     .frame(width: 44, height: 44)
-                    .background(filled ? AnyShapeStyle(WZ.ink) : AnyShapeStyle(.white), in: .circle)
-                Text(t).font(.caption.weight(.semibold)).foregroundStyle(WZ.ink)
+                    .background(filled ? tone.disc : tone.plate, in: .circle)
+                Text(t).font(.caption.weight(.semibold)).foregroundStyle(tone.ink)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
-            .background(WZ.surface)
+            .background(tone.tile)
             .clipShape(.rect(cornerRadius: 20, style: .continuous))
         }
     }

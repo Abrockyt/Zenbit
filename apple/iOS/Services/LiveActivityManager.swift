@@ -14,7 +14,8 @@ enum LiveActivityManager {
             return
         }
         let initials = payee.name.split(separator: " ").compactMap(\.first).prefix(2).map(String.init).joined()
-        let attrs = PaymentAttributes(payeeName: payee.name, payeeInitials: initials, payeeUPI: payee.upiID)
+        let attrs = PaymentAttributes(payeeName: payee.name, payeeInitials: initials, payeeUPI: payee.upiID,
+                                      payeePhoto: payee.photoAsset)
         let state = PaymentAttributes.ContentState(status: "sending", amountText: Money.format(amount), ref: "")
         do {
             current = try Activity.request(attributes: attrs, content: .init(state: state, staleDate: nil))
