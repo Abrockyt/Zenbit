@@ -139,7 +139,8 @@ final class AppModel {
             else { selectedTab = .pay }
         default: break
         }
-        Analytics.track("widget_open", ["link": url.absoluteString])
+        // Only the kind of link: the rest of a pay or upi:// link can hold a name, UPI ID or amount.
+        Analytics.track("widget_open", ["link": url.host() ?? "unknown"])
     }
 
     /// Push a small snapshot to a connected watch (name, balance, recent payments – nothing that can move money).
