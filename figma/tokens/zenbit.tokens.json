@@ -1,0 +1,404 @@
+{
+  "Foundations/Color/Brand": {
+    "green": {
+      "value": "#00C46A",
+      "type": "color",
+      "description": "Money / primary action fill. Same in light and dark. Label on it: black."
+    },
+    "greenDeep": {
+      "value": "#00924F",
+      "type": "color",
+      "description": "Selected tab, pressed green"
+    },
+    "greenInk": {
+      "value": "#00804A",
+      "type": "color",
+      "description": "Green text on white (5:1). Dark mode value #1FD67F."
+    },
+    "greenSoft": {
+      "value": "#E4F8EE",
+      "type": "color"
+    },
+    "mint": {
+      "value": "#7CF5C0",
+      "type": "color"
+    },
+    "ink": {
+      "value": "#0B0D0C",
+      "type": "color",
+      "description": "Primary text / black buttons"
+    },
+    "black": {
+      "value": "#0B0C10",
+      "type": "color",
+      "description": "Scan pill glass tint, reward cashback card, Watch page uses #000000"
+    }
+  },
+  "Foundations/Color/Neutral": {
+    "canvas": {
+      "value": "#FFFFFF",
+      "type": "color"
+    },
+    "surface": {
+      "value": "#F3F6F4",
+      "type": "color"
+    },
+    "raised": {
+      "value": "#FFFFFF",
+      "type": "color"
+    },
+    "hairline": {
+      "value": "#E3E8E5",
+      "type": "color"
+    },
+    "inkSecondary": {
+      "value": "#5F6662",
+      "type": "color"
+    },
+    "inkTertiary": {
+      "value": "#9AA29E",
+      "type": "color"
+    }
+  },
+  "Foundations/Color/Status": {
+    "danger": {
+      "value": "#E5372C",
+      "type": "color"
+    },
+    "dangerSoft": {
+      "value": "#FDECEA",
+      "type": "color"
+    },
+    "warning": {
+      "value": "#B86E00",
+      "type": "color"
+    },
+    "warningSoft": {
+      "value": "#FFF4E0",
+      "type": "color"
+    },
+    "accentChrome": {
+      "value": "#4338CA",
+      "type": "color",
+      "description": "Links in chrome. Tab tint is greenDeep."
+    }
+  },
+  "Foundations/Color/Illustration (Home hero)": {
+    "sky": {
+      "value": "#4C9BFF",
+      "type": "color"
+    },
+    "skyBand": {
+      "value": "#7DBBFF",
+      "type": "color"
+    },
+    "buildingFar": {
+      "value": "#3B78EE",
+      "type": "color"
+    },
+    "buildingNear": {
+      "value": "#1F4FC8",
+      "type": "color"
+    },
+    "windowLine": {
+      "value": "#FFD54A",
+      "type": "color"
+    },
+    "hillFar": {
+      "value": "#8BE04E",
+      "type": "color"
+    },
+    "hillMid": {
+      "value": "#1FB866",
+      "type": "color"
+    },
+    "hillNear": {
+      "value": "#0E9A55",
+      "type": "color"
+    },
+    "personRed": {
+      "value": "#FF3B5C",
+      "type": "color"
+    },
+    "personYellow": {
+      "value": "#FFC83D",
+      "type": "color"
+    },
+    "personViolet": {
+      "value": "#7B4DFF",
+      "type": "color"
+    },
+    "personNavy": {
+      "value": "#1F2A5C",
+      "type": "color"
+    }
+  },
+  "Foundations/Color/Rewards": {
+    "walletOrange": {
+      "value": "#FF7A2F",
+      "type": "color"
+    },
+    "walletBlue": {
+      "value": "#2B59FF",
+      "type": "color"
+    },
+    "walletBlack": {
+      "value": "#0B0C10",
+      "type": "color"
+    },
+    "brandZomato": {
+      "value": "#E23744",
+      "type": "color"
+    },
+    "brandSwiggy": {
+      "value": "#FC8019",
+      "type": "color"
+    },
+    "brandBookMyShow": {
+      "value": "#C4242B",
+      "type": "color"
+    },
+    "brandUber": {
+      "value": "#0B0B0B",
+      "type": "color"
+    },
+    "brandSpotify": {
+      "value": "#169C46",
+      "type": "color"
+    },
+    "brandAmazon": {
+      "value": "#232F3E",
+      "type": "color"
+    },
+    "brandFlipkart": {
+      "value": "#2874F0",
+      "type": "color"
+    },
+    "brandBigBasket": {
+      "value": "#6FA81E",
+      "type": "color"
+    }
+  },
+  "Foundations/Color/Apple Watch": {
+    "page": {
+      "value": "#000000",
+      "type": "color",
+      "description": "One flat colour behind everything (white system clock stays legible)"
+    },
+    "onPage": {
+      "value": "#FFFFFF",
+      "type": "color"
+    },
+    "onPage2": {
+      "value": "#A3A7BC",
+      "type": "color"
+    },
+    "ink": {
+      "value": "#14161F",
+      "type": "color",
+      "description": "Text inside light cards"
+    },
+    "ink2": {
+      "value": "#8B8FA8",
+      "type": "color"
+    },
+    "chip": {
+      "value": "#E9EBF4",
+      "type": "color"
+    },
+    "up": {
+      "value": "#2E7D4F",
+      "type": "color"
+    },
+    "upBg": {
+      "value": "#D3EDDC",
+      "type": "color"
+    },
+    "meshA": {
+      "value": "#D9ECFF",
+      "type": "color"
+    },
+    "meshB": {
+      "value": "#BFD3FA",
+      "type": "color"
+    },
+    "meshC": {
+      "value": "#A9B8F2",
+      "type": "color"
+    },
+    "meshD": {
+      "value": "#8E9CEA",
+      "type": "color"
+    }
+  },
+  "Foundations/Spacing": {
+    "xxs": {
+      "value": "4",
+      "type": "spacing"
+    },
+    "xs": {
+      "value": "8",
+      "type": "spacing"
+    },
+    "sm": {
+      "value": "12",
+      "type": "spacing"
+    },
+    "md": {
+      "value": "16",
+      "type": "spacing"
+    },
+    "lg": {
+      "value": "20",
+      "type": "spacing"
+    },
+    "xl": {
+      "value": "24",
+      "type": "spacing"
+    },
+    "xxl": {
+      "value": "32",
+      "type": "spacing"
+    },
+    "xxxl": {
+      "value": "48",
+      "type": "spacing"
+    },
+    "margin": {
+      "value": "20",
+      "type": "spacing"
+    }
+  },
+  "Foundations/Radius": {
+    "sm": {
+      "value": "12",
+      "type": "borderRadius",
+      "description": "Continuous (squircle) corners"
+    },
+    "md": {
+      "value": "16",
+      "type": "borderRadius",
+      "description": "Continuous (squircle) corners"
+    },
+    "lg": {
+      "value": "22",
+      "type": "borderRadius",
+      "description": "Continuous (squircle) corners"
+    },
+    "xl": {
+      "value": "30",
+      "type": "borderRadius",
+      "description": "Continuous (squircle) corners"
+    },
+    "card": {
+      "value": "28",
+      "type": "borderRadius",
+      "description": "Continuous (squircle) corners"
+    },
+    "pill": {
+      "value": "999",
+      "type": "borderRadius",
+      "description": "Continuous (squircle) corners"
+    }
+  },
+  "Foundations/Size": {
+    "minTarget": {
+      "value": "44",
+      "type": "sizing",
+      "description": "HIG minimum hit target"
+    },
+    "keypadKey": {
+      "value": "76",
+      "type": "sizing",
+      "description": "iOS dial-pad key; 58 on the amount screen"
+    },
+    "tabIcon": {
+      "value": "18",
+      "type": "sizing"
+    }
+  },
+  "Foundations/Typography": {
+    "amountHero": {
+      "value": {
+        "fontFamily": "SF Pro Rounded",
+        "fontWeight": "Semibold",
+        "fontSize": "64"
+      },
+      "type": "typography"
+    },
+    "amountLarge": {
+      "value": {
+        "fontFamily": "SF Pro Rounded",
+        "fontWeight": "Semibold",
+        "fontSize": "40"
+      },
+      "type": "typography"
+    },
+    "requestAmount": {
+      "value": {
+        "fontFamily": "SF Pro Rounded",
+        "fontWeight": "Bold",
+        "fontSize": "30"
+      },
+      "type": "typography"
+    },
+    "title": {
+      "value": {
+        "fontFamily": "SF Pro",
+        "fontWeight": "Bold",
+        "fontSize": "28"
+      },
+      "type": "typography"
+    },
+    "headline": {
+      "value": {
+        "fontFamily": "SF Pro",
+        "fontWeight": "Semibold",
+        "fontSize": "17"
+      },
+      "type": "typography"
+    },
+    "body": {
+      "value": {
+        "fontFamily": "SF Pro",
+        "fontWeight": "Regular",
+        "fontSize": "17"
+      },
+      "type": "typography"
+    },
+    "footnote": {
+      "value": {
+        "fontFamily": "SF Pro",
+        "fontWeight": "Regular",
+        "fontSize": "13"
+      },
+      "type": "typography"
+    },
+    "caption": {
+      "value": {
+        "fontFamily": "SF Pro",
+        "fontWeight": "Regular",
+        "fontSize": "12"
+      },
+      "type": "typography"
+    }
+  },
+  "Foundations/Motion": {
+    "snappy": {
+      "value": "spring response 0.28 / damping 0.86",
+      "type": "other"
+    },
+    "standard": {
+      "value": "spring 0.42 / 0.84",
+      "type": "other"
+    },
+    "hero": {
+      "value": "spring 0.62 / 0.74",
+      "type": "other"
+    },
+    "island": {
+      "value": "open spring 0.46/0.68 · close 0.62/0.92",
+      "type": "other"
+    }
+  }
+}
