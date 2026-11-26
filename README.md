@@ -40,6 +40,18 @@ Payment apps lose trust in two places: the moment of paying, and the clutter aro
 
 ---
 
+## Videos
+
+iPhone and Apple Watch mock-ups made from simulator recordings ([watch them on the showcase](https://zenbit-nine.vercel.app/#film)).
+
+| Payment | Apple Watch |
+|---|---|
+| [<img src="docs/media/mock/payment.jpg" alt="Payment mock-up video" width="360">](docs/media/mock/payment.mp4) | [<img src="docs/media/mock/watch.jpg" alt="Apple Watch mock-up video" width="360">](docs/media/mock/watch.mp4) |
+
+Also: [sign up](docs/media/mock/signup.mp4) · [launch and home](docs/media/mock/home.mp4) · [rewards](docs/media/mock/rewards.mp4) · [Zen AI](docs/media/mock/zen-ai.mp4). Hand photo: [PAKUTASO](https://www.pakutaso.com).
+
+---
+
 ## Screens
 
 ### Paying
@@ -251,7 +263,8 @@ Choose the **ZenbitPay** scheme and an iPhone simulator, then press Run. To run 
 |---|---|
 | [`apple/`](apple) | SwiftUI app for iPhone and Apple Watch, widgets, Live Activity |
 | [`figma/`](figma) | Design tokens, screen captures and notes |
-| [`recordings/`](recordings) | Framed 60 fps recordings of the main flows |
+| [`videos/`](videos) | Original screen recordings from iPhone and Apple Watch, with no mock-ups |
+| [`recordings/`](recordings) | The main flows inside a simple device frame |
 | [`docs/`](docs) | The showcase web page and the images used here |
 
 The earlier web and Expo prototypes were removed from the current files; they remain in the Git history.

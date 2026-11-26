@@ -33,8 +33,21 @@ section{padding:88px 0;border-top:1px solid var(--line)}
 .btn{display:inline-block;padding:14px 24px;border-radius:999px;font-weight:600;font-size:15px;text-decoration:none;background:var(--ink);color:#fff}
 .btn.alt{background:var(--soft);color:var(--ink)}
 .note{margin-top:26px;font-size:13px;color:var(--ink2);border-left:3px solid var(--green);padding-left:12px;max-width:520px}
-.phone{justify-self:center;width:min(100%,340px);background:#edeef2;border-radius:44px;padding:14px}
-.phone video{width:100%;height:auto;border-radius:32px}
+.stage{justify-self:center;width:min(100%,520px)}
+video{width:100%;height:auto}
+.stage video,.reel video{border-radius:28px;background:#fff}
+.reel{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:38px}
+.reel figure{border:1px solid var(--line);border-radius:30px;padding:8px 8px 18px;background:#fff}
+.reel figcaption{padding:6px 14px 0;font-size:14.5px;color:var(--ink2)}
+.reel figcaption b{display:block;color:var(--ink);font-size:17px}
+@media (max-width:700px){.reel{grid-template-columns:1fr}}
+.wrist{margin-top:20px;display:grid;grid-template-columns:.9fr 1.1fr;gap:36px;align-items:center;background:#0b0b0b;color:#fff;border-radius:30px;padding:12px}
+.wrist .copy{padding:28px 12px 28px 28px}
+.wrist .copy h3{margin:0 0 12px;font-size:clamp(24px,3vw,34px);line-height:1.15;letter-spacing:-.02em}
+.wrist .copy p,.wrist .copy li{color:#c6cbc9;font-size:15.5px}
+.wrist .copy ul{margin:16px 0 0 18px}
+.wrist video{border-radius:22px;background:#080808}
+@media (max-width:760px){.wrist{grid-template-columns:1fr;gap:0}.wrist .copy{padding:26px 18px 10px;order:-1}}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px}
 .stat{background:var(--soft);border-radius:22px;padding:22px}
 .stat b{display:block;font-size:30px;letter-spacing:-.02em}
@@ -89,7 +102,7 @@ footer p{margin-top:10px;max-width:760px}
 <nav><div class="wrap">
   <a class="brand" href="#top"><img src="media/icon.png" alt="Zenbit icon"><span>Zenbit</span></a>
   <div class="links">
-    <a href="#why">Why it works</a><a href="#screens">Screens</a><a href="#decisions">UI decisions</a><a href="#ads">Advertising</a><a href="#business">Business</a><a href="#data">Data</a><a href="#revenue">Revenue model</a>
+    <a href="#why">Why it works</a><a href="#film">Videos</a><a href="#screens">Screens</a><a href="#decisions">UI decisions</a><a href="#ads">Advertising</a><a href="#business">Business</a><a href="#data">Data</a><a href="#revenue">Revenue model</a>
   </div>
 </div></nav>
 
@@ -104,8 +117,8 @@ footer p{margin-top:10px;max-width:760px}
     </div>
     <p class="note"><b>Concept app.</b> People, balances, payments and offers are sample data. No bank is connected, no money moves and no user data is collected.</p>
   </div>
-  <div class="phone">
-    <video src="media/payment.mp4" poster="media/payment-poster.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="Screen recording of a simulated Zenbit payment"></video>
+  <div class="stage">
+    <video class="auto" src="media/mock/payment.mp4" poster="media/mock/payment.jpg" muted loop playsinline controls preload="metadata" width="864" height="1080" aria-label="Zenbit payment shown on an iPhone mock-up"></video>
   </div>
 </div></header>
 
@@ -120,6 +133,26 @@ footer p{margin-top:10px;max-width:760px}
     <div class="card"><h4>“Stop me before a mistake.”</h4><p>Warnings for repeated payments and suspicious requests.</p><p class="why">The check happens before money leaves.</p></div>
     <div class="card"><h4>“Make the usual thing quick.”</h4><p>Suggested amount, Face ID, favourites and widgets.</p><p class="why">Paying someone again takes 3 taps from Home.</p></div>
     <div class="card"><h4>“Keep ads out of my way.”</h4><p>Ads are labelled and never appear in the pay flow or receipt.</p><p class="why">The business earns without getting between a person and a payment.</p></div>
+  </div>
+</div></section>
+
+<section id="film"><div class="wrap">
+  <div class="eyebrow">In motion</div>
+  <h2>See it move.</h2>
+  <p class="lead">Simulator recordings of the app, placed on iPhone and Apple Watch mock-ups. Waiting time and restarts are trimmed. No sound.</p>
+  <div class="reel">
+    <figure><video class="auto" src="media/mock/signup.mp4" poster="media/mock/signup.jpg" muted loop playsinline controls preload="none" width="864" height="1080" aria-label="Sign up on an iPhone mock-up"></video><figcaption><b>Sign up</b>Mobile number, code, bank and UPI PIN, then all set.</figcaption></figure>
+    <figure><video class="auto" src="media/mock/home.mp4" poster="media/mock/home.jpg" muted loop playsinline controls preload="none" width="864" height="1080" aria-label="Launch and home on an iPhone mock-up"></video><figcaption><b>Launch and home</b>A still logo, then the home screen. Ads slip into the free space on scroll.</figcaption></figure>
+    <figure><video class="auto" src="media/mock/rewards.mp4" poster="media/mock/rewards.jpg" muted loop playsinline controls preload="none" width="864" height="1080" aria-label="Rewards on an iPhone mock-up"></video><figcaption><b>Rewards</b>Redeem to a bank, scratch a card and collect coupons.</figcaption></figure>
+    <figure><video class="auto" src="media/mock/zen-ai.mp4" poster="media/mock/zen-ai.jpg" muted loop playsinline controls preload="none" width="864" height="1080" aria-label="Zen AI on an iPhone mock-up"></video><figcaption><b>Zen AI</b>Ask about spending. Black and white, with an answer and a chart.</figcaption></figure>
+  </div>
+  <div class="wrist">
+    <div class="copy">
+      <h3>On the wrist</h3>
+      <p>The Watch shows what matters at a glance. Sending money stays on the iPhone.</p>
+      <ul><li>Pair once with a code approved on the iPhone</li><li>Ask Zen about your spending</li><li>See who paid you, and how much</li></ul>
+    </div>
+    <video class="auto" src="media/mock/watch.mp4" poster="media/mock/watch.jpg" muted loop playsinline controls preload="none" width="864" height="1080" aria-label="Apple Watch screens shown on a wrist mock-up"></video>
   </div>
 </div></section>
 
@@ -254,14 +287,17 @@ footer p{margin-top:10px;max-width:760px}
 </div></section>
 
 <footer><div class="wrap">
-  <div class="btns" style="margin:0 0 18px"><a class="btn" href="https://github.com/Abrockyt/Zenbit">GitHub</a><a class="btn alt" href="https://www.figma.com/design/krbWrsbpPXzNV9TtVSxwva/Zenbit-new">Figma file</a></div>
+  <div class="btns" style="margin:0 0 18px"><a class="btn" href="https://github.com/Abrockyt/Zenbit">GitHub</a><a class="btn alt" href="https://github.com/Abrockyt/Zenbit/tree/main/videos">Original recordings</a><a class="btn alt" href="https://www.figma.com/design/krbWrsbpPXzNV9TtVSxwva/Zenbit-new">Figma file</a></div>
   <p>Zenbit is a concept and is not affiliated with NPCI, UPI, Apple, any bank or any merchant. Bank and merchant logos are trademarks of their owners.</p>
-  <p>Most contact portraits are demo placeholders from randomuser.me. Some images were captured before the latest visual tweaks, and the recording has no sound.</p>
+  <p>Most contact portraits are demo placeholders from randomuser.me. Some images and videos were captured before the latest visual tweaks. Videos are illustrative mock-ups made from simulator recordings. Hand photo in the Watch video: <a href="https://www.pakutaso.com">PAKUTASO</a>.</p>
 </div></footer>
 
 <script>
-// Respect reduced motion: don't autoplay the recording.
-if (matchMedia('(prefers-reduced-motion: reduce)').matches) { const v = document.querySelector('video'); v.removeAttribute('autoplay'); v.pause(); }
+// Play each video only while it is on screen; never autoplay when reduced motion is requested.
+if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+  const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? e.target.play().catch(() => {}) : e.target.pause()), { threshold: 0.35 });
+  document.querySelectorAll('video.auto').forEach(v => io.observe(v));
+}
 </script>
 </body>
 </html>
